@@ -1,3 +1,5 @@
+import '../../auth/widgets/nova_area_dialog.dart';
+import '../../../core/models/area_selecionada.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -26,8 +28,8 @@ class _EditarPerfilProfessorScreenState
     extends State<EditarPerfilProfessorScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nome;
-  late final Set<String> _areasTecnicas;
-  late final Set<String> _areasInteresse;
+  late final Set<AreaSelecionada> _areasTecnicas;
+  late final Set<AreaSelecionada> _areasInteresse;
   bool _tentouSalvar = false;
 
   @override
@@ -37,7 +39,7 @@ class _EditarPerfilProfessorScreenState
     _areasTecnicas = {...widget.professor.areasTecnicas};
     _areasInteresse = {...widget.professor.areasInteresse};
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CadastroProvider>().carregarAreas();
+      if (mounted) context.read<CadastroProvider>().carregarAreas();
     });
   }
 
@@ -48,41 +50,16 @@ class _EditarPerfilProfessorScreenState
   }
 
   Future<void> _adicionarArea({required TipoArea tipo}) async {
-    final controller = TextEditingController();
-    final nomeBruto = await showDialog<String>(
+    final cadastro = context.read<CadastroProvider>();
+    final nomeFinal = await showDialog<AreaSelecionada>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(tipo == TipoArea.tecnica
-            ? 'Nova área técnica'
-            : 'Nova área de interesse'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(hintText: 'Nome da área'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('Adicionar'),
-          ),
-        ],
+      barrierDismissible: false,
+      builder: (_) => NovaAreaDialog(
+        tipo: tipo,
+        criadoPorId: widget.professor.id,
+        cadastro: cadastro,
       ),
     );
-
-    if (nomeBruto == null || nomeBruto.isEmpty || !mounted) return;
-
-    final cadastro = context.read<CadastroProvider>();
-    final nomeFinal = await cadastro.adicionarNovaArea(
-      tipo: tipo,
-      nomeBruto: nomeBruto,
-      criadoPorUid: widget.professor.uid,
-    );
-
     if (!mounted) return;
     if (nomeFinal != null) {
       setState(() {
@@ -92,10 +69,6 @@ class _EditarPerfilProfessorScreenState
           _areasInteresse.add(nomeFinal);
         }
       });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível adicionar a área')),
-      );
     }
   }
 
@@ -109,7 +82,7 @@ class _EditarPerfilProfessorScreenState
     final auth = context.read<AuthProvider>();
 
     final ok = await perfil.salvarProfessor(
-      uid: widget.professor.uid,
+      id: widget.professor.id,
       nome: _nome.text,
       areasTecnicas: _areasTecnicas.toList(),
       areasInteresse: _areasInteresse.toList(),
@@ -175,7 +148,9 @@ class _EditarPerfilProfessorScreenState
                 const SizedBox(height: 20),
                 const FormLabel('Áreas Técnicas *'),
                 _ChipsSelector(
-                  opcoes: cadastro.areasTecnicas.map((a) => a.nome).toList(),
+                  opcoes: cadastro.areasTecnicas
+                      .map((a) => AreaSelecionada(id: a.id, nome: a.nome))
+                      .toList(),
                   selecionadas: _areasTecnicas,
                   onToggle: (a) => setState(() {
                     if (_areasTecnicas.contains(a)) {
@@ -191,7 +166,9 @@ class _EditarPerfilProfessorScreenState
                 const SizedBox(height: 20),
                 const FormLabel('Áreas de Interesse *'),
                 _ChipsSelector(
-                  opcoes: cadastro.areasInteresse.map((a) => a.nome).toList(),
+                  opcoes: cadastro.areasInteresse
+                      .map((a) => AreaSelecionada(id: a.id, nome: a.nome))
+                      .toList(),
                   selecionadas: _areasInteresse,
                   onToggle: (a) => setState(() {
                     if (_areasInteresse.contains(a)) {
@@ -318,9 +295,9 @@ class _ErroCampo extends StatelessWidget {
 }
 
 class _ChipsSelector extends StatelessWidget {
-  final List<String> opcoes;
-  final Set<String> selecionadas;
-  final ValueChanged<String> onToggle;
+  final List<AreaSelecionada> opcoes;
+  final Set<AreaSelecionada> selecionadas;
+  final ValueChanged<AreaSelecionada> onToggle;
   final VoidCallback onAdicionar;
 
   const _ChipsSelector({
@@ -341,7 +318,7 @@ class _ChipsSelector extends StatelessWidget {
         ...todas.map((area) {
           final selected = selecionadas.contains(area);
           return FilterChip(
-            label: Text(area),
+            label: Text(area.nome),
             selected: selected,
             onSelected: (_) => onToggle(area),
             selectedColor: AppColors.primary,

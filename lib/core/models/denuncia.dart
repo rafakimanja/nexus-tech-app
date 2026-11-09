@@ -67,11 +67,11 @@ class Denuncia {
   // --- alvo ---
   final String demandaId;
   final String tituloDemanda;
-  final String demandanteUid;
+  final String demandanteId;
   final String demandanteNome;
 
   // --- autor da denúncia ---
-  final String professorUid;
+  final String professorId;
   final String professorNome;
 
   // --- conteúdo ---
@@ -81,7 +81,7 @@ class Denuncia {
   // --- julgamento ---
   final StatusDenuncia status;
   final DateTime? analisadaEm;
-  final String? analisadaPorUid;
+  final String? analisadaPorId;
   final String? analisadaPorNome;
   final String? parecerAdmin;
 
@@ -96,16 +96,16 @@ class Denuncia {
     required this.id,
     required this.demandaId,
     required this.tituloDemanda,
-    required this.demandanteUid,
+    required this.demandanteId,
     required this.demandanteNome,
-    required this.professorUid,
+    required this.professorId,
     required this.professorNome,
     required this.motivo,
     required this.descricao,
     required this.status,
     required this.criadoEm,
     this.analisadaEm,
-    this.analisadaPorUid,
+    this.analisadaPorId,
     this.analisadaPorNome,
     this.parecerAdmin,
     this.strikeAplicado = false,
@@ -116,15 +116,15 @@ class Denuncia {
   Map<String, dynamic> toMap() => {
         'demandaId': demandaId,
         'tituloDemanda': tituloDemanda,
-        'demandanteUid': demandanteUid,
+        'demandanteUid': demandanteId,
         'demandanteNome': demandanteNome,
-        'professorUid': professorUid,
+        'professorUid': professorId,
         'professorNome': professorNome,
         'motivo': motivo.name,
         'descricao': descricao,
         'status': status.name,
         'analisadaEm': analisadaEm?.toIso8601String(),
-        'analisadaPorUid': analisadaPorUid,
+        'analisadaPorUid': analisadaPorId,
         'analisadaPorNome': analisadaPorNome,
         'parecerAdmin': parecerAdmin,
         'strikeAplicado': strikeAplicado,
@@ -135,20 +135,19 @@ class Denuncia {
         id: id,
         demandaId: map['demandaId'] as String? ?? '',
         tituloDemanda: map['tituloDemanda'] as String? ?? 'Demanda',
-        demandanteUid: map['demandanteUid'] as String? ?? '',
+        demandanteId: map['demandanteUid'] as String? ?? '',
         demandanteNome: map['demandanteNome'] as String? ?? 'Demandante',
-        professorUid: map['professorUid'] as String? ?? '',
+        professorId: map['professorUid'] as String? ?? '',
         professorNome: map['professorNome'] as String? ?? 'Professor',
         motivo: MotivoDenuncia.from(map['motivo'] as String?),
         descricao: map['descricao'] as String? ?? '',
         status: StatusDenuncia.from(map['status'] as String?),
         analisadaEm: DateTime.tryParse(map['analisadaEm'] as String? ?? ''),
-        analisadaPorUid: map['analisadaPorUid'] as String?,
+        analisadaPorId: map['analisadaPorUid'] as String?,
         analisadaPorNome: map['analisadaPorNome'] as String?,
         parecerAdmin: map['parecerAdmin'] as String?,
         strikeAplicado: map['strikeAplicado'] as bool? ?? false,
-        criadoEm:
-            DateTime.tryParse(map['criadoEm'] as String? ?? '') ??
-                DateTime.now(),
+        criadoEm: DateTime.tryParse(map['criadoEm'] as String? ?? '') ??
+            DateTime.now(),
       );
 }

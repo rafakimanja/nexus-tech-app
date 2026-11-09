@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../app/theme.dart';
+import '../../../app/app_dependencies.dart';
+import '../../../core/widgets/recurso_indisponivel.dart';
 import '../../../core/models/anexo.dart';
 import '../../../core/repositories/anexo_repository.dart';
 import '../providers/demanda_form_provider.dart';
@@ -47,6 +49,7 @@ class AnexosSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (context.read<AppDependencies>().usaApi) return const RecursoIndisponivel('Anexos');
     return Consumer<DemandaFormProvider>(
       builder: (context, form, _) {
         final temAlgo = form.totalAnexos > 0;

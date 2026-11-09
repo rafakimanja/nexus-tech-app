@@ -23,9 +23,12 @@ class AdminDemandantesScreen extends StatelessWidget {
       children: [
         AdminHeader(
           titulo: 'Demandantes',
-          subtitulo: admin.demandantesBanidos == 0
-              ? 'Nenhuma conta suspensa'
-              : '${admin.demandantesBanidos} conta(s) suspensa(s)',
+          subtitulo:
+              admin.carregandoDemandantes || admin.erroDemandantes != null
+                  ? null
+                  : admin.demandantesBanidos == 0
+                      ? 'Nenhuma conta suspensa'
+                      : '${admin.demandantesBanidos} conta(s) suspensa(s)',
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
@@ -40,6 +43,9 @@ class AdminDemandantesScreen extends StatelessWidget {
   }
 
   Widget _lista(BuildContext context, AdminProvider admin) {
+    if (admin.erroDemandantes != null) {
+      return AvisoAdmin(admin.erroDemandantes!);
+    }
     if (admin.carregandoDemandantes && admin.demandantes.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -219,7 +225,7 @@ Future<void> ajustarStrikesComDialogo(
   final ok = await provider.ajustarStrikes(
     demandante: demandante,
     novoTotal: novoTotal,
-    adminUid: admin.uid,
+    adminId: admin.id,
     adminNome: admin.nome,
     motivo: motivo,
   );

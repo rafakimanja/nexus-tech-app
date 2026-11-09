@@ -8,6 +8,11 @@ sealed class AppException implements Exception {
   String toString() => message;
 }
 
+class RecursoIndisponivelException extends AppException {
+  const RecursoIndisponivelException(String recurso)
+      : super('$recurso ainda não está disponível nesta versão.');
+}
+
 /// Falha de rede ou conectividade
 class NetworkException extends AppException {
   const NetworkException()

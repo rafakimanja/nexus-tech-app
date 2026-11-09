@@ -14,14 +14,15 @@ import '../../../core/repositories/notificacao_repository.dart';
 class NotificacoesProvider extends ChangeNotifier {
   final NotificacaoRepository _repository;
 
-  NotificacoesProvider({NotificacaoRepository? repository})
-      : _repository = repository ?? NotificacaoRepository();
+  NotificacoesProvider({required NotificacaoRepository repository})
+      : _repository = repository;
 
   StreamSubscription<List<Notificacao>>? _sub;
   List<Notificacao> _notificacoes = const [];
   bool _carregando = false;
   String? _erro;
-  String? _uid;
+  String? _id;
+  bool _disposed = false;
 
   List<Notificacao> get notificacoes => _notificacoes;
   bool get carregando => _carregando;
@@ -32,28 +33,28 @@ class NotificacoesProvider extends ChangeNotifier {
 
   /// Inicia a observação. Idempotente para o mesmo usuário — chamada dos
   /// `initState` das telas raiz de cada papel.
-  void observar(String uid) {
-    if (_uid == uid && _sub != null) return;
-    _uid = uid;
+  void observar(String id) {
+    if (_id == id && _sub != null) return;
+    _id = id;
 
     _carregando = true;
     _erro = null;
-    notifyListeners();
+    if (!_disposed) notifyListeners();
 
     _sub?.cancel();
-    _sub = _repository.observar(uid).listen(
+    _sub = _repository.observar(id).listen(
       (lista) {
         _notificacoes = lista;
         _carregando = false;
         _erro = null;
-        notifyListeners();
+        if (!_disposed) notifyListeners();
       },
       onError: (Object e) {
         _carregando = false;
         _erro = e is AppException
             ? e.message
             : 'Não foi possível carregar suas notificações.';
-        notifyListeners();
+        if (!_disposed) notifyListeners();
       },
     );
   }
@@ -63,10 +64,10 @@ class NotificacoesProvider extends ChangeNotifier {
   void limpar() {
     _sub?.cancel();
     _sub = null;
-    _uid = null;
+    _id = null;
     _notificacoes = const [];
     _erro = null;
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   /// Marca como lida. Não faz nada se já estiver lida — evita escrita inútil
@@ -77,29 +78,30 @@ class NotificacoesProvider extends ChangeNotifier {
       await _repository.marcarComoLida(n.id);
     } on AppException catch (e) {
       _erro = e.message;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
   }
 
   Future<void> marcarTodasComoLidas() async {
-    final uid = _uid;
-    if (uid == null || !temNaoLidas) return;
+    final id = _id;
+    if (id == null || !temNaoLidas) return;
     try {
-      await _repository.marcarTodasComoLidas(uid);
+      await _repository.marcarTodasComoLidas(id);
     } on AppException catch (e) {
       _erro = e.message;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
   }
 
   void limparErro() {
     if (_erro == null) return;
     _erro = null;
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   @override
   void dispose() {
+    _disposed = true;
     _sub?.cancel();
     super.dispose();
   }

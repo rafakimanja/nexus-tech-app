@@ -1,12 +1,11 @@
 import 'dart:async';
-
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
-import '../constants/app_constants.dart';
 import '../exceptions/app_exception.dart';
 import '../models/demandante.dart';
+import '../models/enums.dart';
 import '../models/professor.dart';
+import '../models/sessao_usuario.dart';
 import '../models/usuario.dart';
 import '../repositories/usuario_repository.dart';
 import '../services/auth_service.dart';
@@ -17,194 +16,101 @@ enum AuthStatus {
   naoAutenticado,
   autenticadoSemCadastro,
   autenticado,
-  erro,
+  erro
 }
 
-/// Estado de autenticação e do perfil do usuário logado.
-///
-/// **Por que o perfil é observado, e não lido uma vez:** decisões
-/// administrativas (banir um demandante, desativar um professor) precisam
-/// valer na sessão que já está aberta. Com uma leitura pontual, o usuário
-/// seguiria operando com o perfil antigo até reabrir o app — exatamente o
-/// intervalo em que a suspensão deveria estar valendo.
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService;
   final UsuarioRepository _usuarioRepository;
-
-  AuthProvider({
-    AuthService? authService,
-    UsuarioRepository? usuarioRepository,
-  })  : _authService = authService ?? AuthService(),
-        _usuarioRepository = usuarioRepository ?? UsuarioRepository() {
-    _init();
-  }
-
+  late final StreamSubscription<SessaoUsuario?> _subAuth;
+  StreamSubscription<Usuario?>? _subUsuario;
   AuthStatus _status = AuthStatus.initial;
   Usuario? _usuario;
-  User? _firebaseUser;
+  SessaoUsuario? _sessao;
   String? _erro;
+  int _geracao = 0;
+  bool _disposed = false;
 
-  StreamSubscription<User?>? _subAuth;
-  StreamSubscription<Usuario?>? _subUsuario;
-
-  /// Trava de reentrância da criação automática do admin. Sem ela, o próprio
-  /// `set()` reemite o snapshot e a criação dispara de novo antes de o
-  /// documento aparecer no stream.
-  bool _criandoAdmin = false;
+  AuthProvider(
+      {required AuthService authService,
+      required UsuarioRepository usuarioRepository})
+      : _authService = authService,
+        _usuarioRepository = usuarioRepository {
+    _subAuth =
+        _authService.authStateChanges.listen(_onAuthChanged, onError: _onErro);
+  }
 
   AuthStatus get status => _status;
   Usuario? get usuario => _usuario;
-  User? get firebaseUser => _firebaseUser;
+  SessaoUsuario? get sessao => _sessao;
   String? get erro => _erro;
+  bool get contaBanida =>
+      _usuario is Demandante && (_usuario as Demandante).banido;
+  bool get professorInativo =>
+      _usuario is Professor && !(_usuario as Professor).ativo;
+  bool get isProfessor => _sessao?.role == UserRole.professor;
 
-  /// Demandante com a conta suspensa por acúmulo de strikes.
-  /// O roteador troca o app inteiro por uma tela de bloqueio quando isso é
-  /// verdade — não basta esconder botões.
-  bool get contaBanida {
-    final u = _usuario;
-    return u is Demandante && u.banido;
-  }
-
-  /// Professor com o perfil desligado pela administração (UC04 R01).
-  bool get professorInativo {
-    final u = _usuario;
-    return u is Professor && !u.ativo;
-  }
-
-  bool get isProfessorEmail {
-    final email = _firebaseUser?.email?.toLowerCase();
-    if (email == null) return false;
-    if (email.endsWith('@${AppConstants.professorEmailDomain}')) return true;
-    // ===== INÍCIO — E-MAIL DE TESTE (PROFESSOR) — REMOVER ANTES DE PRODUÇÃO =====
-    // Allowlist de teste: trata e-mails pessoais como professor.
-    // Lista definida em AppConstants.professorTestEmails.
-    return AppConstants.professorTestEmails
-        .map((e) => e.toLowerCase())
-        .contains(email);
-    // ===== FIM — E-MAIL DE TESTE (PROFESSOR) =====
-  }
-
-  bool get isAdminEmail {
-    final email = _firebaseUser?.email?.toLowerCase();
-    if (email == null) return false;
-    return AppConstants.adminEmails.map((e) => e.toLowerCase()).contains(email);
-  }
-
-  void _init() {
-    _subAuth = _authService.authStateChanges.listen(_onAuthChanged);
-  }
-
-  Future<void> _onAuthChanged(User? user) async {
-    _firebaseUser = user;
-    await _subUsuario?.cancel();
-    _subUsuario = null;
-    _criandoAdmin = false;
-
-    if (user == null) {
-      _status = AuthStatus.naoAutenticado;
-      _usuario = null;
-      _erro = null;
-      notifyListeners();
-      return;
-    }
-
-    _subUsuario = _usuarioRepository.observarPorUid(user.uid).listen(
-          _onPerfilChanged,
-          onError: _onPerfilErro,
-        );
-  }
-
-  void _onPerfilChanged(Usuario? cadastro) {
-    if (cadastro != null) {
-      _usuario = cadastro;
-      _status = AuthStatus.autenticado;
-      _erro = null;
-      _criandoAdmin = false;
-      notifyListeners();
-      return;
-    }
-
-    // Não há cadastro ainda.
-    final user = _firebaseUser;
-    if (user != null && isAdminEmail) {
-      // Primeiro acesso de admin: perfil criado automaticamente. O stream
-      // reemite com o documento pronto e cai no ramo de cima.
-      if (!_criandoAdmin) {
-        _criandoAdmin = true;
-        unawaited(_criarAdmin(user));
-      }
-      return;
-    }
-
-    // Professor ou demandante: precisa preencher o cadastro.
+  Future<void> _onAuthChanged(SessaoUsuario? sessao) async {
+    final geracao = ++_geracao;
+    _sessao = sessao;
     _usuario = null;
-    _status = AuthStatus.autenticadoSemCadastro;
     _erro = null;
-    notifyListeners();
+    _status =
+        sessao == null ? AuthStatus.naoAutenticado : AuthStatus.autenticando;
+    if (!_disposed) notifyListeners();
+    // Desliga a assinatura imediatamente, sem prender a nova sessão à limpeza
+    // assíncrona do backend anterior. A geração já descarta eventos atrasados.
+    final anterior = _subUsuario;
+    _subUsuario = null;
+    unawaited(anterior?.cancel());
+    if (_disposed || geracao != _geracao) return;
+    if (sessao == null) return;
+    _subUsuario = _usuarioRepository.observarPorId(sessao.id).listen((usuario) {
+      if (_disposed || geracao != _geracao) return;
+      _usuario = usuario;
+      _status = usuario == null
+          ? AuthStatus.autenticadoSemCadastro
+          : AuthStatus.autenticado;
+      _erro = null;
+      notifyListeners();
+    }, onError: (Object erro) {
+      if (!_disposed && geracao == _geracao) _onErro(erro);
+    });
   }
 
-  Future<void> _criarAdmin(User user) async {
-    try {
-      await _usuarioRepository.criarAdministradorAutomatico(
-        uid: user.uid,
-        email: user.email!,
-        nome: user.displayName ?? user.email!.split('@').first,
-      );
-      // O objeto criado não é atribuído aqui de propósito: o stream do perfil
-      // entrega a versão canônica do documento logo em seguida, e usar as duas
-      // fontes abriria espaço para divergência.
-    } catch (e) {
-      _criandoAdmin = false;
-      _onPerfilErro(e);
-    }
-  }
-
-  void _onPerfilErro(Object e) {
-    _erro = e is AppException ? e.message : 'Erro inesperado ao carregar perfil.';
+  void _onErro(Object erro) {
+    if (_disposed) return;
+    _usuario = null;
+    _erro = erro is AppException
+        ? erro.message
+        : 'Falha ao carregar sua sessão. Tente novamente.';
     _status = AuthStatus.erro;
     notifyListeners();
   }
 
   Future<void> entrarComGoogle() async {
+    _status = AuthStatus.autenticando;
+    _erro = null;
+    notifyListeners();
     try {
-      _status = AuthStatus.autenticando;
-      _erro = null;
-      notifyListeners();
-
-      final user = await _authService.signInWithGoogle();
-      if (user == null) {
+      final sessao = await _authService.signInWithGoogle();
+      if (sessao == null && !_disposed) {
         _status = AuthStatus.naoAutenticado;
         notifyListeners();
       }
-      // Sucesso: _onAuthChanged é chamado pelo stream
     } catch (e) {
-      _erro = 'Falha ao autenticar. Tente novamente.';
-      _status = AuthStatus.erro;
-      notifyListeners();
+      _onErro(e);
     }
   }
 
-  Future<void> sair() async {
-    await _subUsuario?.cancel();
-    _subUsuario = null;
-    await _authService.signOut();
-  }
-
-  /// Reassina o perfil.
-  ///
-  /// Com o stream em pé, o app já reflete qualquer mudança sozinho — as telas
-  /// de cadastro e edição continuam chamando isto por clareza de intenção
-  /// ("acabei de gravar, quero o perfil atualizado") e para cobrir o caso em
-  /// que a inscrição caiu por erro de rede.
-  Future<void> recarregarUsuario() async {
-    final user = _firebaseUser;
-    if (user == null) return;
-    await _onAuthChanged(user);
-  }
+  Future<void> sair() => _authService.signOut();
+  Future<void> recarregarUsuario() => _onAuthChanged(_authService.currentUser);
 
   @override
   void dispose() {
-    _subAuth?.cancel();
+    _disposed = true;
+    _geracao++;
+    _subAuth.cancel();
     _subUsuario?.cancel();
     super.dispose();
   }

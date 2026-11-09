@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
@@ -61,8 +62,10 @@ class PerfilAvatar extends StatelessWidget {
             clipBehavior: Clip.antiAlias,
             child: url == null
                 ? _fallbackIniciais()
-                : Image.network(
-                    url,
+                : Image(
+                    image: url.startsWith('data:')
+                        ? MemoryImage(base64Decode(url.split(',').last))
+                        : NetworkImage(url) as ImageProvider,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => _fallbackIniciais(),
                     loadingBuilder: (context, child, progress) {

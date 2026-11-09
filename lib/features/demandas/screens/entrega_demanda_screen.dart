@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../../app/theme.dart';
+import '../../../app/app_dependencies.dart';
+import '../../../core/widgets/recurso_indisponivel.dart';
 import '../../../core/models/anexo.dart';
 import '../../../core/models/demanda.dart';
 import '../../../core/repositories/anexo_repository.dart';
@@ -16,12 +18,12 @@ import '../widgets/demanda_detalhe_widgets.dart';
 /// envia os anexos e conclui a demanda (transição atômica no repositório).
 class EntregaDemandaScreen extends StatefulWidget {
   final Demanda demanda;
-  final String professorUid;
+  final String professorId;
 
   const EntregaDemandaScreen({
     super.key,
     required this.demanda,
-    required this.professorUid,
+    required this.professorId,
   });
 
   @override
@@ -86,7 +88,7 @@ class _EntregaDemandaScreenState extends State<EntregaDemandaScreen> {
     final acao = context.read<AcaoDemandaProvider>();
     final ok = await acao.concluir(
       demandaId: widget.demanda.id,
-      professorUid: widget.professorUid,
+      professorId: widget.professorId,
       descricaoSolucao: _descricao.text,
       anexos: _anexos,
     );
@@ -168,69 +170,74 @@ class _EntregaDemandaScreenState extends State<EntregaDemandaScreen> {
                         },
                       ),
                       const SizedBox(height: 24),
-                      const Text(
-                        'Arquivos da entrega',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Opcional. PDF, DOCX, JPG ou PNG • máx 10 MB',
-                        style: TextStyle(
-                            fontSize: 12, color: Colors.grey.shade600),
-                      ),
-                      const SizedBox(height: 12),
-                      InkWell(
-                        onTap: processando ? null : _selecionarArquivo,
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 24),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: AppColors.primary.withValues(alpha: 0.4),
-                              width: 1.5,
-                            ),
+                      if (context.read<AppDependencies>().usaApi)
+                        const RecursoIndisponivel('Arquivos da entrega')
+                      else ...[
+                        const Text(
+                          'Arquivos da entrega',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
                           ),
-                          child: const Column(
-                            children: [
-                              Icon(Icons.cloud_upload_outlined,
-                                  size: 32, color: AppColors.primary),
-                              SizedBox(height: 8),
-                              Text(
-                                'Anexar arquivo',
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Opcional. PDF, DOCX, JPG ou PNG • máx 10 MB',
+                          style: TextStyle(
+                              fontSize: 12, color: Colors.grey.shade600),
+                        ),
+                        const SizedBox(height: 12),
+                        InkWell(
+                          onTap: processando ? null : _selecionarArquivo,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 24),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.primary.withValues(alpha: 0.4),
+                                width: 1.5,
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      ..._anexos.asMap().entries.map(
-                            (e) => _AnexoPendenteTile(
-                              anexo: e.value,
-                              onRemover: processando
-                                  ? null
-                                  : () =>
-                                      setState(() => _anexos.removeAt(e.key)),
+                            ),
+                            child: const Column(
+                              children: [
+                                Icon(Icons.cloud_upload_outlined,
+                                    size: 32, color: AppColors.primary),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Anexar arquivo',
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
+                        ),
+                        const SizedBox(height: 12),
+                        ..._anexos.asMap().entries.map(
+                              (e) => _AnexoPendenteTile(
+                                anexo: e.value,
+                                onRemover: processando
+                                    ? null
+                                    : () =>
+                                        setState(() => _anexos.removeAt(e.key)),
+                              ),
+                            ),
+                      ],
                       const SizedBox(height: 8),
                       BlocoInfo(
                         cor: AppColors.textSecondary,
                         icone: Icons.info_outline,
                         titulo: 'Ao concluir',
-                        conteudo:
-                            'O demandante é notificado, a avaliação é liberada '
-                            'e a demanda sai da prateleira pública.',
+                        conteudo: context.read<AppDependencies>().usaApi
+                            ? 'A solução fica disponível ao demandante e a demanda sai da prateleira.'
+                            : 'O demandante é notificado, a avaliação é liberada '
+                                'e a demanda sai da prateleira pública.',
                       ),
                     ],
                   ),

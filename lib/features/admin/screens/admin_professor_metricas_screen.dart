@@ -29,12 +29,12 @@ class AdminProfessorMetricasScreen extends StatefulWidget {
 
 class _AdminProfessorMetricasScreenState
     extends State<AdminProfessorMetricasScreen> {
-  final _repository = AdminRepository();
+  AdminRepository get _repository => context.read<AdminRepository>();
 
   late final Stream<MetricasProfessor> _metricas =
-      _repository.observarMetricas(widget.professor.uid);
+      _repository.observarMetricas(widget.professor.id);
   late final Stream<List<Demanda>> _demandas =
-      _repository.observarDemandasDoProfessor(widget.professor.uid);
+      _repository.observarDemandasDoProfessor(widget.professor.id);
 
   /// A instância mais recente do professor.
   ///
@@ -44,7 +44,7 @@ class _AdminProfessorMetricasScreenState
   Professor get _professor {
     final lista = context.watch<AdminProvider>().professores;
     for (final p in lista) {
-      if (p.uid == widget.professor.uid) return p;
+      if (p.id == widget.professor.id) return p;
     }
     return widget.professor;
   }
@@ -84,7 +84,7 @@ class _AdminProfessorMetricasScreenState
       final ok = await provider.definirProfessorAtivo(
         professor: professor,
         ativo: false,
-        adminUid: admin.uid,
+        adminId: admin.id,
         adminNome: admin.nome,
         motivo: motivo,
       );
@@ -128,7 +128,7 @@ class _AdminProfessorMetricasScreenState
     final ok = await provider.definirProfessorAtivo(
       professor: professor,
       ativo: true,
-      adminUid: admin.uid,
+      adminId: admin.id,
       adminNome: admin.nome,
     );
     _feedback(
@@ -143,7 +143,7 @@ class _AdminProfessorMetricasScreenState
   Widget build(BuildContext context) {
     final professor = _professor;
     final processando =
-        context.watch<AdminProvider>().processando(professor.uid);
+        context.watch<AdminProvider>().processando(professor.id);
 
     return Scaffold(
       body: SafeArea(
@@ -171,7 +171,10 @@ class _AdminProfessorMetricasScreenState
                         ),
                         const SizedBox(height: 24),
                       ],
-                      _blocoMetricas(metricas),
+                      if (snap.hasError)
+                        AvisoAdmin(mensagemErroAdmin(snap.error))
+                      else
+                        _blocoMetricas(metricas),
                       const SizedBox(height: 28),
                       _areas(professor),
                       const SizedBox(height: 28),
@@ -179,7 +182,11 @@ class _AdminProfessorMetricasScreenState
                     ],
                   ),
                 ),
-                _barraAcao(professor, metricas, processando),
+                if (context.watch<AdminProvider>().suportaModeracao)
+                  _barraAcao(professor, metricas, processando)
+                else
+                  const AvisoAdmin(
+                      'Ativação e desativação de professores ainda não estão disponíveis no servidor.'),
               ],
             );
           },
@@ -277,7 +284,7 @@ class _AdminProfessorMetricasScreenState
               cor: StatusDemanda.concluida.cor,
             ),
             CartaoMetrica(
-              valor: '${m.devolvidas}',
+              valor: m.historicoDevolucoesDisponivel ? '${m.devolvidas}' : '—',
               label: 'Devolvidas',
               icone: Icons.undo,
               cor: Colors.amber.shade800,
@@ -290,6 +297,9 @@ class _AdminProfessorMetricasScreenState
             ),
           ],
         ),
+        if (!m.historicoDevolucoesDisponivel)
+          const AvisoAdmin(
+              'O servidor não fornece o histórico de demandas devolvidas.'),
         const SizedBox(height: 10),
         GradeMetricas(
           colunas: 2,
@@ -361,19 +371,26 @@ class _AdminProfessorMetricasScreenState
           ),
         ),
         const SizedBox(height: 12),
-        grupo('Técnicas', p.areasTecnicas),
+        grupo('Técnicas', p.areasTecnicas.map((a) => a.nome).toList()),
         const SizedBox(height: 16),
-        grupo('De interesse', p.areasInteresse),
+        grupo('De interesse', p.areasInteresse.map((a) => a.nome).toList()),
       ],
     );
   }
 
   Widget _listaDemandas() {
-    return StreamBuilder<List<Demanda>>(
+    return SecaoPersistenteAdmin(
+        child: StreamBuilder<List<Demanda>>(
       stream: _demandas,
       builder: (context, snap) {
+        if (snap.hasError) return AvisoAdmin(mensagemErroAdmin(snap.error));
+        if (!snap.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
         final demandas = snap.data ?? const <Demanda>[];
-        if (demandas.isEmpty) return const SizedBox.shrink();
+        if (demandas.isEmpty) {
+          return const AvisoAdmin('Nenhuma demanda atribuída.');
+        }
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -419,7 +436,7 @@ class _AdminProfessorMetricasScreenState
           ],
         );
       },
-    );
+    ));
   }
 
   Widget _barraAcao(
@@ -477,7 +494,6 @@ class _AdminProfessorMetricasScreenState
     );
   }
 
-  String _data(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')}/'
+  String _data(DateTime d) => '${d.day.toString().padLeft(2, '0')}/'
       '${d.month.toString().padLeft(2, '0')}/${d.year}';
 }

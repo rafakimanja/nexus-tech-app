@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../perfil/screens/perfil_screen.dart';
 import '../../../app/theme.dart';
+import '../../../app/app_dependencies.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../chat/providers/chats_provider.dart';
 import '../../chat/screens/chats_screen.dart';
@@ -32,11 +33,13 @@ class _ProfessorHomeScreenState extends State<ProfessorHomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final uid = context.read<AuthProvider>().usuario?.uid;
-      if (uid == null) return;
-      context.read<ProfessorDemandasProvider>().observar(uid);
-      context.read<ChatsProvider>().observar(uid);
-      context.read<NotificacoesProvider>().observar(uid);
+      final id = context.read<AuthProvider>().usuario?.id;
+      if (id == null) return;
+      context.read<ProfessorDemandasProvider>().observar(id);
+      if (!context.read<AppDependencies>().usaApi) {
+        context.read<ChatsProvider>().observar(id);
+      }
+      context.read<NotificacoesProvider>().observar(id);
     });
   }
 

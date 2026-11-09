@@ -1,3 +1,4 @@
+import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
@@ -130,7 +131,7 @@ class _ContadorAnexos extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<int>(
-      future: DemandaRepository().contarAnexos(demandaId),
+      future: context.read<DemandaRepository>().contarAnexos(demandaId),
       builder: (context, snap) {
         final n = snap.data ?? 0;
 

@@ -4,7 +4,7 @@ class Area {
   final String id;
   final String nome;
   final DateTime criadoEm;
-  final String criadoPor; // uid do professor que adicionou
+  final String criadoPor; // id do professor que adicionou
 
   Area({
     required this.id,
@@ -18,13 +18,10 @@ class Area {
     final trimmed = input.trim();
     if (trimmed.isEmpty) return '';
 
-    return trimmed
-        .split(RegExp(r'\s+'))
-        .map((palavra) {
-          if (palavra.isEmpty) return palavra;
-          return palavra[0].toUpperCase() + palavra.substring(1).toLowerCase();
-        })
-        .join(' ');
+    return trimmed.split(RegExp(r'\s+')).map((palavra) {
+      if (palavra.isEmpty) return palavra;
+      return palavra[0].toUpperCase() + palavra.substring(1).toLowerCase();
+    }).join(' ');
   }
 
   /// Chave usada para detectar duplicatas (lowercase, sem espaços extras).

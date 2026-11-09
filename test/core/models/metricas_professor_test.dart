@@ -16,7 +16,7 @@ Demanda _demanda({
 }) {
   return Demanda(
     id: id,
-    demandanteUid: 'dem-1',
+    demandanteId: 'dem-1',
     demandanteNome: 'Org Teste',
     demandanteTipo: TipoDemandante.empresa,
     titulo: 'Demanda $id',
@@ -25,7 +25,7 @@ Demanda _demanda({
     impacto: 'impacto',
     status: status,
     criadoEm: _base,
-    professorUid: 'prof-1',
+    professorId: 'prof-1',
     professorNome: 'Prof Teste',
     analiseIniciadaEm: analiseIniciadaEm,
     producaoIniciadaEm: producaoIniciadaEm,
@@ -37,7 +37,7 @@ void main() {
   group('MetricasProfessor.calcular — contagens por status', () {
     test('classifica cada demanda no balde certo', () {
       final m = MetricasProfessor.calcular(
-        professorUid: 'prof-1',
+        professorId: 'prof-1',
         demandas: [
           _demanda(id: '1', status: StatusDemanda.emAnalise),
           _demanda(id: '2', status: StatusDemanda.emProducao),
@@ -58,7 +58,7 @@ void main() {
 
     test('lista vazia produz métricas zeradas sem médias', () {
       final m = MetricasProfessor.calcular(
-        professorUid: 'prof-1',
+        professorId: 'prof-1',
         demandas: const [],
       );
 
@@ -71,9 +71,10 @@ void main() {
   });
 
   group('MetricasProfessor.taxaConclusao', () {
-    test('mede sobre o que foi assumido, ignorando o que está só em análise', () {
+    test('mede sobre o que foi assumido, ignorando o que está só em análise',
+        () {
       final m = MetricasProfessor.calcular(
-        professorUid: 'prof-1',
+        professorId: 'prof-1',
         demandas: [
           _demanda(id: '1', status: StatusDemanda.concluida),
           _demanda(id: '2', status: StatusDemanda.concluida),
@@ -89,7 +90,7 @@ void main() {
 
     test('é nula quando nada foi assumido', () {
       final m = MetricasProfessor.calcular(
-        professorUid: 'prof-1',
+        professorId: 'prof-1',
         demandas: [_demanda(id: '1', status: StatusDemanda.emAnalise)],
       );
 
@@ -100,7 +101,7 @@ void main() {
   group('MetricasProfessor — médias de tempo', () {
     test('tempo médio de entrega é a média entre produção e conclusão', () {
       final m = MetricasProfessor.calcular(
-        professorUid: 'prof-1',
+        professorId: 'prof-1',
         demandas: [
           _demanda(
             id: '1',
@@ -122,7 +123,7 @@ void main() {
 
     test('tempo médio de decisão vai da análise ao início da produção', () {
       final m = MetricasProfessor.calcular(
-        professorUid: 'prof-1',
+        professorId: 'prof-1',
         demandas: [
           _demanda(
             id: '1',
@@ -141,7 +142,7 @@ void main() {
       // (relógio do cliente, migração manual). Entrar na média distorceria
       // permanentemente o indicador, então é descartada.
       final m = MetricasProfessor.calcular(
-        professorUid: 'prof-1',
+        professorId: 'prof-1',
         demandas: [
           _demanda(
             id: '1',
@@ -157,7 +158,7 @@ void main() {
 
     test('ignora demandas sem os dois marcos preenchidos', () {
       final m = MetricasProfessor.calcular(
-        professorUid: 'prof-1',
+        professorId: 'prof-1',
         demandas: [
           _demanda(
             id: '1',
@@ -181,7 +182,7 @@ void main() {
   group('MetricasProfessor.ultimaAtividade', () {
     test('é o marco mais recente entre todas as demandas', () {
       final m = MetricasProfessor.calcular(
-        professorUid: 'prof-1',
+        professorId: 'prof-1',
         demandas: [
           _demanda(
             id: '1',
@@ -206,7 +207,8 @@ void main() {
       expect(formatarDuracao(null), '—');
       expect(formatarDuracao(const Duration(seconds: 30)), '<1min');
       expect(formatarDuracao(const Duration(minutes: 12)), '12min');
-      expect(formatarDuracao(const Duration(hours: 5, minutes: 20)), '5h 20min');
+      expect(
+          formatarDuracao(const Duration(hours: 5, minutes: 20)), '5h 20min');
       expect(formatarDuracao(const Duration(days: 3, hours: 4)), '3d 4h');
     });
   });

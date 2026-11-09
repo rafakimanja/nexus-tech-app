@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../app/app_dependencies.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/models/denuncia.dart';
@@ -48,7 +50,8 @@ class _DenunciarDemandaDialogState extends State<DenunciarDemandaDialog> {
   void _confirmar() {
     final descricao = _controller.text.trim();
     if (descricao.length < 10) {
-      setState(() => _erro = 'Descreva o problema com pelo menos 10 caracteres');
+      setState(
+          () => _erro = 'Descreva o problema com pelo menos 10 caracteres');
       return;
     }
     Navigator.of(context).pop((motivo: _motivo, descricao: descricao));
@@ -156,8 +159,10 @@ class _DenunciarDemandaDialogState extends State<DenunciarDemandaDialog> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Denúncias procedentes geram advertência ao '
-                        'demandante. Três advertências suspendem a conta.',
+                        context.read<AppDependencies>().usaApi
+                            ? 'A denúncia será encaminhada à administração.'
+                            : 'Denúncias procedentes geram advertência ao '
+                                'demandante. Três advertências suspendem a conta.',
                         style: TextStyle(
                           fontSize: 12,
                           height: 1.4,

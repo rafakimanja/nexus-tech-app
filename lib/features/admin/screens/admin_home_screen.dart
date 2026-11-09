@@ -32,9 +32,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<AdminProvider>().observar();
-      final uid = context.read<AuthProvider>().usuario?.uid;
-      if (uid != null) {
-        context.read<NotificacoesProvider>().observar(uid);
+      final id = context.read<AuthProvider>().usuario?.id;
+      if (id != null) {
+        context.read<NotificacoesProvider>().observar(id);
       }
     });
   }

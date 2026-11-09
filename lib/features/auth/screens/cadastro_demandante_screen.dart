@@ -50,13 +50,13 @@ class _CadastroDemandanteScreenState extends State<CadastroDemandanteScreen> {
 
     final auth = context.read<AuthProvider>();
     final cadastro = context.read<CadastroProvider>();
-    final firebaseUser = auth.firebaseUser;
+    final sessao = auth.sessao;
 
-    if (firebaseUser == null) return;
+    if (sessao == null) return;
 
     final ok = await cadastro.cadastrarDemandante(
-      uid: firebaseUser.uid,
-      email: firebaseUser.email!,
+      id: sessao.id,
+      email: sessao.email,
       nome: _nome.text,
       telefone: _telefone.text,
       tipo: _tipo!,

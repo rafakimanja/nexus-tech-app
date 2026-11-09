@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../app/theme.dart';
+import '../../../app/app_dependencies.dart';
+import '../../admin/screens/api_denuncia_detalhes_screen.dart';
 import '../../../core/models/enums.dart';
 import '../../../core/models/notificacao.dart';
 import '../../../core/providers/auth_provider.dart';
@@ -46,7 +48,15 @@ class NotificacoesScreen extends StatelessWidget {
             ),
         ],
       ),
-      body: SafeArea(child: _corpo(context, provider)),
+      body: SafeArea(
+          child: Column(children: [
+        if (provider.erro != null && provider.notificacoes.isNotEmpty)
+          Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(provider.erro!,
+                  style: const TextStyle(color: AppColors.error))),
+        Expanded(child: _corpo(context, provider)),
+      ])),
     );
   }
 
@@ -80,18 +90,20 @@ class NotificacoesScreen extends StatelessWidget {
         final n = provider.notificacoes[i];
         return _CartaoNotificacao(
           notificacao: n,
-          onTap: () => _abrir(context, n),
+          onTap: () => abrirNotificacao(context, n),
         );
       },
     );
   }
 
-  Future<void> _abrir(BuildContext context, Notificacao n) async {
+  static Future<void> abrirNotificacao(
+      BuildContext context, Notificacao n) async {
     final navigator = Navigator.of(context);
     final auth = context.read<AuthProvider>();
     final admin = context.read<AdminProvider>();
     await context.read<NotificacoesProvider>().marcarComoLida(n);
 
+    if (!context.mounted) return;
     final role = auth.usuario?.role;
 
     switch (n.tipo.destino) {
@@ -116,6 +128,11 @@ class NotificacoesScreen extends StatelessWidget {
         // o parecer já está no corpo da notificação; levá-lo à demanda é o
         // próximo passo útil.
         if (role == UserRole.administrador) {
+          if (context.read<AppDependencies>().usaApi && n.denunciaId != null) {
+            navigator.push(MaterialPageRoute<void>(
+                builder: (_) => ApiDenunciaDetalhesScreen(id: n.denunciaId!)));
+            return;
+          }
           final denuncia =
               n.denunciaId == null ? null : admin.denunciaPorId(n.denunciaId!);
           if (denuncia == null) return;

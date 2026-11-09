@@ -12,11 +12,11 @@ import '../../../core/repositories/demanda_repository.dart';
 class DemandasProvider extends ChangeNotifier {
   final DemandaRepository _repository;
 
-  DemandasProvider({DemandaRepository? repository})
-      : _repository = repository ?? DemandaRepository();
+  DemandasProvider({required DemandaRepository repository})
+      : _repository = repository;
 
   StreamSubscription<List<Demanda>>? _subscription;
-  String? _demandanteUidAtual;
+  String? _demandanteIdAtual;
 
   List<Demanda> _todas = [];
   String _busca = '';
@@ -54,9 +54,9 @@ class DemandasProvider extends ChangeNotifier {
 
   /// Inicia/atualiza a observação. Deve ser chamado quando o usuário
   /// loga ou quando os filtros server-side mudam.
-  void observar(String demandanteUid) {
-    final mudou = _demandanteUidAtual != demandanteUid;
-    _demandanteUidAtual = demandanteUid;
+  void observar(String demandanteId) {
+    final mudou = _demandanteIdAtual != demandanteId;
+    _demandanteIdAtual = demandanteId;
     if (mudou) {
       _todas = [];
     }
@@ -67,7 +67,7 @@ class DemandasProvider extends ChangeNotifier {
     _subscription?.cancel();
     _subscription = _repository
         .listarDoDemandante(
-      demandanteUid: demandanteUid,
+      demandanteId: demandanteId,
       filtroStatus: _filtroStatus,
       filtroPeriodo: _filtroPeriodo,
     )
@@ -97,8 +97,8 @@ class DemandasProvider extends ChangeNotifier {
   }) {
     _filtroStatus = status;
     _filtroPeriodo = periodo;
-    if (_demandanteUidAtual != null) {
-      observar(_demandanteUidAtual!);
+    if (_demandanteIdAtual != null) {
+      observar(_demandanteIdAtual!);
     } else {
       notifyListeners();
     }

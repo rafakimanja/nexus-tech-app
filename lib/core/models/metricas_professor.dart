@@ -8,10 +8,10 @@ import 'demanda.dart';
 /// Function). No volume de um campus — dezenas de demandas por professor — uma
 /// única query por professor é mais barata que a complexidade de manter
 /// contadores consistentes. Quando o volume crescer, a migração natural é uma
-/// Cloud Function que mantém `users/{uid}.metricas` atualizado; ver
+/// Cloud Function que mantém `users/{id}.metricas` atualizado; ver
 /// `docs/CLOUD_FUNCTIONS.md`.
 class MetricasProfessor {
-  final String professorUid;
+  final String professorId;
 
   final int totalAtribuidas;
   final int emAnalise;
@@ -22,6 +22,7 @@ class MetricasProfessor {
   /// Derivado dos logs de auditoria (`rejeitar` + `rollback_analise`), pois a
   /// demanda devolvida perde o vínculo com o professor.
   final int devolvidas;
+  final bool historicoDevolucoesDisponivel;
 
   /// Média de (concluidaEm - producaoIniciadaEm) sobre as concluídas.
   /// `null` quando não há nenhuma concluída com ambos os marcos preenchidos.
@@ -35,23 +36,25 @@ class MetricasProfessor {
   final DateTime? ultimaAtividade;
 
   const MetricasProfessor({
-    required this.professorUid,
+    required this.professorId,
     required this.totalAtribuidas,
     required this.emAnalise,
     required this.emProducao,
     required this.concluidas,
     required this.devolvidas,
+    this.historicoDevolucoesDisponivel = true,
     this.tempoMedioEntrega,
     this.tempoMedioAnalise,
     this.ultimaAtividade,
   });
 
-  const MetricasProfessor.vazia(this.professorUid)
+  const MetricasProfessor.vazia(this.professorId)
       : totalAtribuidas = 0,
         emAnalise = 0,
         emProducao = 0,
         concluidas = 0,
         devolvidas = 0,
+        historicoDevolucoesDisponivel = true,
         tempoMedioEntrega = null,
         tempoMedioAnalise = null,
         ultimaAtividade = null;
@@ -70,11 +73,12 @@ class MetricasProfessor {
 
   /// Constrói as métricas a partir da lista de demandas do professor.
   /// [devolvidas] vem de fora porque não é derivável das demandas atuais
-  /// (a devolução apaga o `professorUid`) — só a auditoria guarda esse fato.
+  /// (a devolução apaga o `professorId`) — só a auditoria guarda esse fato.
   factory MetricasProfessor.calcular({
-    required String professorUid,
+    required String professorId,
     required List<Demanda> demandas,
     int devolvidas = 0,
+    bool historicoDevolucoesDisponivel = true,
   }) {
     var emAnalise = 0;
     var emProducao = 0;
@@ -119,12 +123,13 @@ class MetricasProfessor {
     }
 
     return MetricasProfessor(
-      professorUid: professorUid,
+      professorId: professorId,
       totalAtribuidas: demandas.length,
       emAnalise: emAnalise,
       emProducao: emProducao,
       concluidas: concluidas,
       devolvidas: devolvidas,
+      historicoDevolucoesDisponivel: historicoDevolucoesDisponivel,
       tempoMedioEntrega: _media(entregas),
       tempoMedioAnalise: _media(analises),
       ultimaAtividade: ultima,

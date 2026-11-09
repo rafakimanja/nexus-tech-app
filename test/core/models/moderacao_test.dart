@@ -6,7 +6,7 @@ import 'package:nexus_tech/core/models/enums.dart';
 import 'package:nexus_tech/core/models/notificacao.dart';
 
 Demandante _demandante({int strikes = 0, bool banido = false}) => Demandante(
-      uid: 'dem-1',
+      id: 'dem-1',
       email: 'contato@org.com',
       nome: 'Org Teste',
       criadoEm: DateTime(2026, 1, 1),
@@ -21,8 +21,7 @@ Demandante _demandante({int strikes = 0, bool banido = false}) => Demandante(
 void main() {
   group('Demandante — strikes e banimento', () {
     test('conta quantas advertências faltam para a suspensão', () {
-      expect(_demandante().strikesRestantes,
-          AppConstants.strikesParaBanimento);
+      expect(_demandante().strikesRestantes, AppConstants.strikesParaBanimento);
       expect(_demandante(strikes: 1).strikesRestantes,
           AppConstants.strikesParaBanimento - 1);
       expect(_demandante(strikes: 2).strikesRestantes, 1);
@@ -36,7 +35,8 @@ void main() {
       expect(d.strikesRestantes, 0);
     });
 
-    test('nunca devolve valor negativo, mesmo com ajuste manual acima do limite',
+    test(
+        'nunca devolve valor negativo, mesmo com ajuste manual acima do limite',
         () {
       // O admin pode ajustar strikes manualmente; o contador da UI não pode
       // virar negativo por causa disso.
@@ -97,9 +97,10 @@ void main() {
 
   group('TipoNotificacao', () {
     test('desserializa pelo nome e cai em generica se desconhecido', () {
-      expect(TipoNotificacao.from('novaMensagem'), TipoNotificacao.novaMensagem);
-      expect(TipoNotificacao.from('tipo_inexistente'),
-          TipoNotificacao.generica);
+      expect(
+          TipoNotificacao.from('novaMensagem'), TipoNotificacao.novaMensagem);
+      expect(
+          TipoNotificacao.from('tipo_inexistente'), TipoNotificacao.generica);
       expect(TipoNotificacao.from(null), TipoNotificacao.generica);
     });
 
@@ -107,8 +108,8 @@ void main() {
       expect(TipoNotificacao.novaMensagem.destino, DestinoNotificacao.chat);
       expect(TipoNotificacao.demandaEmProducao.destino,
           DestinoNotificacao.demanda);
-      expect(TipoNotificacao.demandaConcluida.destino,
-          DestinoNotificacao.demanda);
+      expect(
+          TipoNotificacao.demandaConcluida.destino, DestinoNotificacao.demanda);
       expect(TipoNotificacao.denunciaRecebida.destino,
           DestinoNotificacao.denuncia);
       expect(TipoNotificacao.contaBanida.destino, DestinoNotificacao.perfil);
@@ -164,16 +165,16 @@ void main() {
         id: 'd1__prof1',
         demandaId: 'd1',
         tituloDemanda: 'Site',
-        demandanteUid: 'dem-1',
+        demandanteId: 'dem-1',
         demandanteNome: 'Org',
-        professorUid: 'prof-1',
+        professorId: 'prof-1',
         professorNome: 'Ana',
         motivo: MotivoDenuncia.spam,
         descricao: 'Conteúdo repetido em várias demandas.',
         status: StatusDenuncia.procedente,
         criadoEm: DateTime(2026, 3, 10),
         analisadaEm: DateTime(2026, 3, 11),
-        analisadaPorUid: 'admin-1',
+        analisadaPorId: 'admin-1',
         analisadaPorNome: 'Karen',
         parecerAdmin: 'Confirmado.',
         strikeAplicado: true,

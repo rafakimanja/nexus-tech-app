@@ -17,10 +17,10 @@ class AcaoDemandaProvider extends ChangeNotifier {
   final AnexoRepository _anexoRepository;
 
   AcaoDemandaProvider({
-    DemandaRepository? demandaRepository,
-    AnexoRepository? anexoRepository,
-  })  : _demandaRepository = demandaRepository ?? DemandaRepository(),
-        _anexoRepository = anexoRepository ?? AnexoRepository();
+    required DemandaRepository demandaRepository,
+    required AnexoRepository anexoRepository,
+  })  : _demandaRepository = demandaRepository,
+        _anexoRepository = anexoRepository;
 
   String? _processandoId;
   String? _erro;
@@ -37,14 +37,14 @@ class AcaoDemandaProvider extends ChangeNotifier {
 
   Future<bool> marcarParaAnalise({
     required String demandaId,
-    required String professorUid,
+    required String professorId,
     required String professorNome,
   }) {
     return _executar(
       demandaId,
       () => _demandaRepository.marcarParaAnalise(
         demandaId: demandaId,
-        professorUid: professorUid,
+        professorId: professorId,
         professorNome: professorNome,
       ),
     );
@@ -54,13 +54,13 @@ class AcaoDemandaProvider extends ChangeNotifier {
 
   Future<bool> rejeitar({
     required String demandaId,
-    required String professorUid,
+    required String professorId,
   }) {
     return _executar(
       demandaId,
       () => _demandaRepository.rejeitarAnalise(
         demandaId: demandaId,
-        professorUid: professorUid,
+        professorId: professorId,
       ),
     );
   }
@@ -69,13 +69,13 @@ class AcaoDemandaProvider extends ChangeNotifier {
 
   Future<bool> assumir({
     required String demandaId,
-    required String professorUid,
+    required String professorId,
   }) {
     return _executar(
       demandaId,
       () => _demandaRepository.assumir(
         demandaId: demandaId,
-        professorUid: professorUid,
+        professorId: professorId,
       ),
     );
   }
@@ -93,7 +93,7 @@ class AcaoDemandaProvider extends ChangeNotifier {
   /// UC12 A01: conclusão sem anexos é permitida desde que haja descrição.
   Future<bool> concluir({
     required String demandaId,
-    required String professorUid,
+    required String professorId,
     required String descricaoSolucao,
     required List<AnexoPendente> anexos,
   }) {
@@ -102,7 +102,7 @@ class AcaoDemandaProvider extends ChangeNotifier {
         final pendente = anexos.first;
         await _anexoRepository.upload(
           demandaId: demandaId,
-          uid: professorUid,
+          id: professorId,
           pendente: pendente,
         );
         anexos.removeAt(0);
@@ -110,7 +110,7 @@ class AcaoDemandaProvider extends ChangeNotifier {
 
       await _demandaRepository.concluir(
         demandaId: demandaId,
-        professorUid: professorUid,
+        professorId: professorId,
         descricaoSolucao: descricaoSolucao.trim(),
       );
     });

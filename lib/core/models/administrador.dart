@@ -3,7 +3,7 @@ import 'usuario.dart';
 
 class Administrador extends Usuario {
   Administrador({
-    required super.uid,
+    required super.id,
     required super.email,
     required super.nome,
     required super.criadoEm,
@@ -12,7 +12,7 @@ class Administrador extends Usuario {
 
   @override
   Map<String, dynamic> toMap() => {
-        'uid': uid,
+        'uid': id,
         'email': email,
         'nome': nome,
         'role': role.name,
@@ -21,7 +21,7 @@ class Administrador extends Usuario {
       };
 
   factory Administrador.fromMap(Map<String, dynamic> map) => Administrador(
-        uid: map['uid'] as String,
+        id: map['uid'] as String,
         email: map['email'] as String,
         nome: map['nome'] as String,
         criadoEm: DateTime.parse(map['criadoEm'] as String),

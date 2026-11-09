@@ -10,9 +10,9 @@ Chat _chat({
     id: 'demanda-1',
     demandaId: 'demanda-1',
     tituloDemanda: 'Site institucional',
-    demandanteUid: 'dem-1',
+    demandanteId: 'dem-1',
     demandanteNome: 'Prefeitura de Osório',
-    professorUid: 'prof-1',
+    professorId: 'prof-1',
     professorNome: 'Ana Souza',
     participantes: const ['dem-1', 'prof-1'],
     naoLidas: naoLidas,
@@ -30,10 +30,10 @@ void main() {
       expect(chat.outroNome('prof-1'), 'Prefeitura de Osório');
     });
 
-    test('outroUid devolve o uid do interlocutor', () {
+    test('outroId devolve o id do interlocutor', () {
       final chat = _chat();
-      expect(chat.outroUid('dem-1'), 'prof-1');
-      expect(chat.outroUid('prof-1'), 'dem-1');
+      expect(chat.outroId('dem-1'), 'prof-1');
+      expect(chat.outroId('prof-1'), 'dem-1');
     });
   });
 
@@ -44,7 +44,7 @@ void main() {
       expect(chat.naoLidasDe('prof-1'), 0);
     });
 
-    test('uid ausente do mapa conta zero', () {
+    test('id ausente do mapa conta zero', () {
       // Chats criados antes de o contador existir não têm o campo. O badge
       // precisa mostrar "nada pendente", não quebrar.
       expect(_chat().naoLidasDe('dem-1'), 0);

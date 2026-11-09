@@ -6,7 +6,7 @@ class Anexo {
   final String url;
   final int tamanhoBytes;
   final String formato; // pdf, docx, jpg, png
-  final String enviadoPorUid;
+  final String enviadoPorId;
   final DateTime enviadoEm;
 
   const Anexo({
@@ -15,7 +15,7 @@ class Anexo {
     required this.url,
     required this.tamanhoBytes,
     required this.formato,
-    required this.enviadoPorUid,
+    required this.enviadoPorId,
     required this.enviadoEm,
   });
 
@@ -32,7 +32,7 @@ class Anexo {
         'url': url,
         'tamanhoBytes': tamanhoBytes,
         'formato': formato,
-        'enviadoPorUid': enviadoPorUid,
+        'enviadoPorUid': enviadoPorId,
         'enviadoEm': enviadoEm.toIso8601String(),
       };
 
@@ -42,7 +42,7 @@ class Anexo {
         url: map['url'] as String,
         tamanhoBytes: map['tamanhoBytes'] as int,
         formato: map['formato'] as String,
-        enviadoPorUid: map['enviadoPorUid'] as String,
+        enviadoPorId: map['enviadoPorUid'] as String,
         enviadoEm: DateTime.parse(map['enviadoEm'] as String),
       );
 }

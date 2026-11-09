@@ -1,3 +1,5 @@
+import '../widgets/nova_area_dialog.dart';
+import '../../../core/models/area_selecionada.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -24,17 +26,17 @@ class _CadastroProfessorScreenState extends State<CadastroProfessorScreen> {
   final _nome = TextEditingController();
   final _siape = TextEditingController();
 
-  final Set<String> _areasTecnicasSelecionadas = {};
-  final Set<String> _areasInteresseSelecionadas = {};
+  final Set<AreaSelecionada> _areasTecnicasSelecionadas = {};
+  final Set<AreaSelecionada> _areasInteresseSelecionadas = {};
 
   bool _tentouSubmeter = false;
 
   @override
   void initState() {
     super.initState();
-    // Carrega áreas do Firestore ao abrir a tela
+    // Carrega o catálogo do backend ao abrir a tela.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CadastroProvider>().carregarAreas();
+      if (mounted) context.read<CadastroProvider>().carregarAreas();
     });
   }
 
@@ -46,48 +48,18 @@ class _CadastroProfessorScreenState extends State<CadastroProfessorScreen> {
   }
 
   Future<void> _adicionarArea({required TipoArea tipo}) async {
-    final controller = TextEditingController();
-    final nomeBruto = await showDialog<String>(
+    final sessao = context.read<AuthProvider>().sessao;
+    if (sessao == null) return;
+    final cadastro = context.read<CadastroProvider>();
+    final nomeFinal = await showDialog<AreaSelecionada>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(
-          tipo == TipoArea.tecnica
-              ? 'Nova área técnica'
-              : 'Nova área de interesse',
-        ),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(hintText: 'Nome da área'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('Adicionar'),
-          ),
-        ],
+      barrierDismissible: false,
+      builder: (_) => NovaAreaDialog(
+        tipo: tipo,
+        criadoPorId: sessao.id,
+        cadastro: cadastro,
       ),
     );
-
-    if (nomeBruto == null || nomeBruto.isEmpty) return;
-    if (!mounted) return;
-
-    final auth = context.read<AuthProvider>();
-    final cadastro = context.read<CadastroProvider>();
-    final firebaseUser = auth.firebaseUser;
-    if (firebaseUser == null) return;
-
-    final nomeFinal = await cadastro.adicionarNovaArea(
-      tipo: tipo,
-      nomeBruto: nomeBruto,
-      criadoPorUid: firebaseUser.uid,
-    );
-
     if (!mounted) return;
 
     if (nomeFinal != null) {
@@ -98,10 +70,6 @@ class _CadastroProfessorScreenState extends State<CadastroProfessorScreen> {
           _areasInteresseSelecionadas.add(nomeFinal);
         }
       });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível adicionar a área')),
-      );
     }
   }
 
@@ -116,12 +84,12 @@ class _CadastroProfessorScreenState extends State<CadastroProfessorScreen> {
 
     final auth = context.read<AuthProvider>();
     final cadastro = context.read<CadastroProvider>();
-    final firebaseUser = auth.firebaseUser;
-    if (firebaseUser == null) return;
+    final sessao = auth.sessao;
+    if (sessao == null) return;
 
     final ok = await cadastro.cadastrarProfessor(
-      uid: firebaseUser.uid,
-      email: firebaseUser.email!,
+      id: sessao.id,
+      email: sessao.email,
       nome: _nome.text,
       siape: _siape.text,
       areasTecnicas: _areasTecnicasSelecionadas.toList(),
@@ -185,7 +153,7 @@ class _CadastroProfessorScreenState extends State<CadastroProfessorScreen> {
                 const FormLabel('Áreas Técnicas *'),
                 _ChipsSelector(
                   opcoes: cadastro.areasTecnicas
-                      .map((a) => a.nome)
+                      .map((a) => AreaSelecionada(id: a.id, nome: a.nome))
                       .toList(growable: false),
                   selecionadas: _areasTecnicasSelecionadas,
                   onToggle: (a) => setState(() {
@@ -209,7 +177,7 @@ class _CadastroProfessorScreenState extends State<CadastroProfessorScreen> {
                 const FormLabel('Áreas de Interesse *'),
                 _ChipsSelector(
                   opcoes: cadastro.areasInteresse
-                      .map((a) => a.nome)
+                      .map((a) => AreaSelecionada(id: a.id, nome: a.nome))
                       .toList(growable: false),
                   selecionadas: _areasInteresseSelecionadas,
                   onToggle: (a) => setState(() {
@@ -254,9 +222,9 @@ class _CadastroProfessorScreenState extends State<CadastroProfessorScreen> {
 }
 
 class _ChipsSelector extends StatelessWidget {
-  final List<String> opcoes;
-  final Set<String> selecionadas;
-  final ValueChanged<String> onToggle;
+  final List<AreaSelecionada> opcoes;
+  final Set<AreaSelecionada> selecionadas;
+  final ValueChanged<AreaSelecionada> onToggle;
   final VoidCallback onAdicionar;
 
   const _ChipsSelector({
@@ -298,7 +266,7 @@ class _ChipsSelector extends StatelessWidget {
         ...todas.map((area) {
           final selected = selecionadas.contains(area);
           return FilterChip(
-            label: Text(area),
+            label: Text(area.nome),
             selected: selected,
             onSelected: (_) => onToggle(area),
             selectedColor: AppColors.primary,

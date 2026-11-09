@@ -22,8 +22,11 @@ class AdminProfessoresScreen extends StatelessWidget {
       children: [
         AdminHeader(
           titulo: 'Professores',
-          subtitulo: '${admin.professoresAtivos} ativos · '
-              '${admin.professoresInativos} desativados',
+          subtitulo:
+              admin.carregandoProfessores || admin.erroProfessores != null
+                  ? null
+                  : '${admin.professoresAtivos} ativos · '
+                      '${admin.professoresInativos} desativados',
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
@@ -38,6 +41,9 @@ class AdminProfessoresScreen extends StatelessWidget {
   }
 
   Widget _lista(BuildContext context, AdminProvider admin) {
+    if (admin.erroProfessores != null) {
+      return AvisoAdmin(admin.erroProfessores!);
+    }
     if (admin.carregandoProfessores && admin.professores.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -138,7 +144,9 @@ class _CartaoProfessor extends StatelessWidget {
                       children: [
                         Etiqueta(
                           texto: p.ativo ? 'Ativo' : 'Desativado',
-                          cor: p.ativo ? AppColors.success : Colors.grey.shade600,
+                          cor: p.ativo
+                              ? AppColors.success
+                              : Colors.grey.shade600,
                           icone: p.ativo
                               ? Icons.check_circle_outline
                               : Icons.block,

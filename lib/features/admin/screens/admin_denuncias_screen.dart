@@ -4,10 +4,13 @@ import 'package:provider/provider.dart';
 import '../../../app/theme.dart';
 import '../../../core/models/denuncia.dart';
 import '../../demandas/widgets/estado_lista.dart';
-import '../../notificacoes/screens/notificacoes_screen.dart' show formatarQuando;
+import '../../notificacoes/screens/notificacoes_screen.dart'
+    show formatarQuando;
 import '../providers/admin_provider.dart';
 import '../widgets/admin_widgets.dart';
 import 'admin_denuncia_detalhes_screen.dart';
+import 'api_denuncia_detalhes_screen.dart';
+import '../../../app/app_dependencies.dart';
 
 /// Fila de denúncias. Abre em "pendentes" porque é a fila de trabalho; o
 /// histórico completo fica a um toque, para consulta e auditoria.
@@ -26,7 +29,10 @@ class AdminDenunciasScreen extends StatelessWidget {
               ? 'Nenhuma denúncia aguardando análise'
               : '${admin.denunciasPendentes} aguardando análise',
         ),
-        _filtro(context, admin),
+        if (admin.suportaModeracao) _filtro(context, admin),
+        if (!admin.suportaModeracao)
+          const AvisoAdmin(
+              'Denúncias registradas. Julgamento ainda não disponível.'),
         Expanded(child: _lista(context, admin)),
       ],
     );
@@ -60,6 +66,9 @@ class AdminDenunciasScreen extends StatelessWidget {
   }
 
   Widget _lista(BuildContext context, AdminProvider admin) {
+    if (admin.erroDenuncias != null) {
+      return AvisoAdmin(admin.erroDenuncias!);
+    }
     if (admin.carregandoDenuncias && admin.denuncias.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -88,7 +97,9 @@ class AdminDenunciasScreen extends StatelessWidget {
           denuncia: d,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder: (_) => AdminDenunciaDetalhesScreen(denuncia: d),
+              builder: (_) => context.read<AppDependencies>().usaApi
+                  ? ApiDenunciaDetalhesScreen(id: d.id)
+                  : AdminDenunciaDetalhesScreen(denuncia: d),
             ),
           ),
         );
@@ -188,8 +199,7 @@ class _CartaoDenuncia extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     formatarQuando(d.criadoEm),
-                    style:
-                        TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                   ),
                 ],
               ),

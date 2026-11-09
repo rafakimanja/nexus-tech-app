@@ -3,11 +3,13 @@ import 'package:provider/provider.dart';
 
 import '../../../core/widgets/texto_botao.dart';
 import '../../../app/theme.dart';
+import '../../../app/app_dependencies.dart';
+import '../../../core/widgets/recurso_indisponivel.dart';
 import '../../../core/models/anexo.dart';
 import '../../../core/models/demanda.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/repositories/demanda_repository.dart';
-import '../../chat/screens/chat_screen.dart';
+import '../../chat/abrir_chat_demanda.dart';
 import '../providers/demanda_form_provider.dart';
 import '../widgets/anexos_visualizacao.dart';
 import '../widgets/cancelar_demanda_dialog.dart';
@@ -24,7 +26,7 @@ class DemandaDetalhesScreen extends StatefulWidget {
 }
 
 class _DemandaDetalhesScreenState extends State<DemandaDetalhesScreen> {
-  final _repository = DemandaRepository();
+  DemandaRepository get _repository => context.read<DemandaRepository>();
 
   Future<void> _editar(Demanda demanda) async {
     final atualizou = await Navigator.of(context).push<bool>(
@@ -46,12 +48,12 @@ class _DemandaDetalhesScreenState extends State<DemandaDetalhesScreen> {
 
     final auth = context.read<AuthProvider>();
     final form = context.read<DemandaFormProvider>();
-    final uid = auth.usuario?.uid;
-    if (uid == null) return;
+    final id = auth.usuario?.id;
+    if (id == null) return;
 
     final ok = await form.cancelar(
       demandaId: demanda.id,
-      autorUid: uid,
+      autorId: id,
       motivo: motivo,
     );
 
@@ -215,7 +217,9 @@ class _DemandaDetalhesScreenState extends State<DemandaDetalhesScreen> {
                 // atômica junto com a criação da nova demanda (ver
                 // DemandaRepository.criar), então este check é fonte
                 // confiável de verdade.
-                if (demanda.republicadaComoId == null)
+                if (context.read<AppDependencies>().usaApi)
+                  const RecursoIndisponivel('Republicação')
+                else if (demanda.republicadaComoId == null)
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -256,16 +260,12 @@ class _DemandaDetalhesScreenState extends State<DemandaDetalhesScreen> {
 
               // O canal com o professor nasce quando a demanda é aceita
               // (UC11 R03) e continua legível depois da entrega.
-              if (demanda.professorUid != null &&
+              if (!context.read<AppDependencies>().usaApi && demanda.professorId != null &&
                   (demanda.status == StatusDemanda.emProducao ||
                       demanda.status == StatusDemanda.concluida)) ...[
                 const SizedBox(height: 24),
                 OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => ChatScreen(chatId: demanda.id),
-                    ),
-                  ),
+                  onPressed: () => abrirChatDaDemanda(context, demanda.id),
                   icon: const Icon(Icons.chat_bubble_outline, size: 20),
                   label: Text(
                     'Conversar com ${demanda.professorNome ?? "o professor"}',
@@ -283,7 +283,9 @@ class _DemandaDetalhesScreenState extends State<DemandaDetalhesScreen> {
               ],
 
               const SizedBox(height: 24),
-              StreamBuilder<List<Anexo>>(
+              if (context.read<AppDependencies>().usaApi)
+                const RecursoIndisponivel('Anexos')
+              else StreamBuilder<List<Anexo>>(
                 stream: _repository.listarAnexos(demanda.id),
                 builder: (context, snap) {
                   if (snap.connectionState == ConnectionState.waiting &&

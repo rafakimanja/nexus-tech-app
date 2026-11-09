@@ -1,8 +1,8 @@
+import '../../../core/models/criar_demanda.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../core/exceptions/app_exception.dart';
 import '../../../core/models/anexo.dart';
-import '../../../core/models/demanda.dart';
 import '../../../core/models/enums.dart';
 import '../../../core/repositories/anexo_repository.dart';
 import '../../../core/repositories/demanda_repository.dart';
@@ -20,10 +20,10 @@ class DemandaFormProvider extends ChangeNotifier {
   final AnexoRepository _anexoRepository;
 
   DemandaFormProvider({
-    DemandaRepository? demandaRepository,
-    AnexoRepository? anexoRepository,
-  })  : _demandaRepository = demandaRepository ?? DemandaRepository(),
-        _anexoRepository = anexoRepository ?? AnexoRepository();
+    required DemandaRepository demandaRepository,
+    required AnexoRepository anexoRepository,
+  })  : _demandaRepository = demandaRepository,
+        _anexoRepository = anexoRepository;
 
   DemandaFormStatus _status = DemandaFormStatus.initial;
   String? _erro;
@@ -75,13 +75,11 @@ class DemandaFormProvider extends ChangeNotifier {
   Future<void> removerAnexoExistente({
     required String demandaId,
     required Anexo anexo,
-    required String caminhoStorage,
   }) async {
     try {
       await _anexoRepository.remover(
         demandaId: demandaId,
         anexo: anexo,
-        caminhoStorage: caminhoStorage,
       );
       _anexosExistentes.removeWhere((a) => a.id == anexo.id);
       notifyListeners();
@@ -98,7 +96,7 @@ class DemandaFormProvider extends ChangeNotifier {
   /// transação atômica — impede que o demandante republique a mesma
   /// demanda múltiplas vezes.
   Future<bool> criar({
-    required String demandanteUid,
+    required String demandanteId,
     required String demandanteNome,
     required TipoDemandante demandanteTipo,
     required String titulo,
@@ -112,17 +110,14 @@ class DemandaFormProvider extends ChangeNotifier {
       _erro = null;
       notifyListeners();
 
-      final demanda = Demanda(
-        id: '',
-        demandanteUid: demandanteUid,
+      final demanda = CriarDemanda(
+        demandanteId: demandanteId,
         demandanteNome: demandanteNome,
         demandanteTipo: demandanteTipo,
         titulo: titulo.trim(),
         descricao: descricao.trim(),
         publicoAlvo: publicoAlvo.trim(),
         impacto: impacto.trim(),
-        status: StatusDemanda.cadastrada,
-        criadoEm: DateTime.now(),
       );
 
       final id = await _demandaRepository.criar(
@@ -136,7 +131,7 @@ class DemandaFormProvider extends ChangeNotifier {
         try {
           await _anexoRepository.upload(
             demandaId: id,
-            uid: demandanteUid,
+            id: demandanteId,
             pendente: pendente,
           );
         } catch (e) {
@@ -167,7 +162,7 @@ class DemandaFormProvider extends ChangeNotifier {
 
   Future<bool> editar({
     required String demandaId,
-    required String autorUid,
+    required String autorId,
     required String titulo,
     required String descricao,
     required String publicoAlvo,
@@ -180,7 +175,7 @@ class DemandaFormProvider extends ChangeNotifier {
 
       await _demandaRepository.atualizar(
         id: demandaId,
-        autorUid: autorUid,
+        autorId: autorId,
         titulo: titulo.trim(),
         descricao: descricao.trim(),
         publicoAlvo: publicoAlvo.trim(),
@@ -192,7 +187,7 @@ class DemandaFormProvider extends ChangeNotifier {
         try {
           await _anexoRepository.upload(
             demandaId: demandaId,
-            uid: autorUid,
+            id: autorId,
             pendente: pendente,
           );
         } catch (e) {
@@ -222,7 +217,7 @@ class DemandaFormProvider extends ChangeNotifier {
 
   Future<bool> cancelar({
     required String demandaId,
-    required String autorUid,
+    required String autorId,
     required String motivo,
   }) async {
     try {
@@ -232,7 +227,7 @@ class DemandaFormProvider extends ChangeNotifier {
 
       await _demandaRepository.cancelar(
         id: demandaId,
-        autorUid: autorUid,
+        autorId: autorId,
         motivo: motivo.trim(),
       );
 

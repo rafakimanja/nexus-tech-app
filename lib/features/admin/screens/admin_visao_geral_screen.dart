@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../app/theme.dart';
+import '../../../app/app_dependencies.dart';
 import '../../../core/models/demanda.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/repositories/admin_repository.dart';
@@ -22,7 +23,7 @@ class AdminVisaoGeralScreen extends StatefulWidget {
 }
 
 class _AdminVisaoGeralScreenState extends State<AdminVisaoGeralScreen> {
-  final _repository = AdminRepository();
+  AdminRepository get _repository => context.read<AdminRepository>();
   late final Stream<List<Demanda>> _demandas =
       _repository.observarTodasDemandas();
 
@@ -48,40 +49,50 @@ class _AdminVisaoGeralScreenState extends State<AdminVisaoGeralScreen> {
           child: StreamBuilder<List<Demanda>>(
             stream: _demandas,
             builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting &&
-                  !snap.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
               final demandas = snap.data ?? const <Demanda>[];
               return ListView(
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
                 children: [
                   _secao('Demandas'),
-                  GradeMetricas(
-                    cartoes: [
-                      CartaoMetrica(
-                        valor: '${demandas.length}',
-                        label: 'Total',
-                        icone: Icons.inbox_outlined,
-                        cor: AppColors.primary,
-                      ),
-                      for (final status in StatusDemanda.values)
+                  if (snap.hasError)
+                    AvisoAdmin(mensagemErroAdmin(snap.error))
+                  else if (!snap.hasData)
+                    const Center(child: CircularProgressIndicator())
+                  else
+                    GradeMetricas(
+                      cartoes: [
                         CartaoMetrica(
-                          valor: '${_contar(demandas, status)}',
-                          label: status.label,
-                          icone: status.icone,
-                          cor: status.cor,
+                          valor: '${demandas.length}',
+                          label: 'Total',
+                          icone: Icons.inbox_outlined,
+                          cor: AppColors.primary,
                         ),
-                    ],
-                  ),
+                        for (final status in StatusDemanda.values)
+                          CartaoMetrica(
+                            valor: '${_contar(demandas, status)}',
+                            label: status.label,
+                            icone: status.icone,
+                            cor: status.cor,
+                          ),
+                      ],
+                    ),
                   const SizedBox(height: 28),
                   _secao('Moderação'),
+                  if (!admin.suportaModeracao)
+                    const AvisoAdmin(
+                        'Julgamento e ações de moderação ainda não estão disponíveis no servidor.'),
+                  if (admin.erroDenuncias != null)
+                    AvisoAdmin(admin.erroDenuncias!),
+                  if (admin.erroDemandantes != null)
+                    AvisoAdmin(admin.erroDemandantes!),
                   GradeMetricas(
                     colunas: 2,
                     cartoes: [
                       CartaoMetrica(
-                        valor: '${admin.denunciasPendentes}',
+                        valor: admin.carregandoDenuncias ||
+                                admin.erroDenuncias != null
+                            ? '—'
+                            : '${admin.denunciasPendentes}',
                         label: 'Denúncias pendentes',
                         icone: Icons.flag_outlined,
                         cor: admin.denunciasPendentes > 0
@@ -89,7 +100,10 @@ class _AdminVisaoGeralScreenState extends State<AdminVisaoGeralScreen> {
                             : AppColors.success,
                       ),
                       CartaoMetrica(
-                        valor: '${admin.demandantesBanidos}',
+                        valor: admin.carregandoDemandantes ||
+                                admin.erroDemandantes != null
+                            ? '—'
+                            : '${admin.demandantesBanidos}',
                         label: 'Contas suspensas',
                         icone: Icons.block,
                         cor: Colors.deepOrange.shade700,
@@ -98,17 +112,25 @@ class _AdminVisaoGeralScreenState extends State<AdminVisaoGeralScreen> {
                   ),
                   const SizedBox(height: 28),
                   _secao('Corpo docente'),
+                  if (admin.erroProfessores != null)
+                    AvisoAdmin(admin.erroProfessores!),
                   GradeMetricas(
                     colunas: 2,
                     cartoes: [
                       CartaoMetrica(
-                        valor: '${admin.professoresAtivos}',
+                        valor: admin.carregandoProfessores ||
+                                admin.erroProfessores != null
+                            ? '—'
+                            : '${admin.professoresAtivos}',
                         label: 'Professores ativos',
                         icone: Icons.person_outline,
                         cor: AppColors.success,
                       ),
                       CartaoMetrica(
-                        valor: '${admin.professoresInativos}',
+                        valor: admin.carregandoProfessores ||
+                                admin.erroProfessores != null
+                            ? '—'
+                            : '${admin.professoresInativos}',
                         label: 'Professores desativados',
                         icone: Icons.person_off_outlined,
                         cor: Colors.grey.shade600,
@@ -147,12 +169,13 @@ class _AdminVisaoGeralScreenState extends State<AdminVisaoGeralScreen> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.bolt_outlined,
-                size: 18, color: AppColors.primary),
+            const Icon(Icons.bolt_outlined, size: 18, color: AppColors.primary),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Todos os números desta tela são atualizados em tempo real.',
+                context.read<AppDependencies>().usaApi
+                    ? 'Os dados são consultados automaticamente a cada 15 segundos.'
+                    : 'Todos os números desta tela são atualizados em tempo real.',
                 style: TextStyle(
                   fontSize: 12,
                   height: 1.4,

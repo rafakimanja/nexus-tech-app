@@ -1,3 +1,4 @@
+import '../../../core/models/area_selecionada.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../core/exceptions/app_exception.dart';
@@ -15,10 +16,10 @@ class CadastroProvider extends ChangeNotifier {
   final AreaRepository _areaRepository;
 
   CadastroProvider({
-    UsuarioRepository? usuarioRepository,
-    AreaRepository? areaRepository,
-  })  : _usuarioRepository = usuarioRepository ?? UsuarioRepository(),
-        _areaRepository = areaRepository ?? AreaRepository();
+    required UsuarioRepository usuarioRepository,
+    required AreaRepository areaRepository,
+  })  : _usuarioRepository = usuarioRepository,
+        _areaRepository = areaRepository;
 
   CadastroStatus _status = CadastroStatus.initial;
   String? _erro;
@@ -56,16 +57,17 @@ class CadastroProvider extends ChangeNotifier {
     }
   }
 
-  Future<String?> adicionarNovaArea({
+  Future<AreaSelecionada?> adicionarNovaArea({
     required TipoArea tipo,
     required String nomeBruto,
-    required String criadoPorUid,
+    required String criadoPorId,
   }) async {
+    _erro = null;
     try {
       final area = await _areaRepository.criarSeNaoExiste(
         tipo: tipo,
         nomeBruto: nomeBruto,
-        criadoPorUid: criadoPorUid,
+        criadoPorId: criadoPorId,
       );
 
       // Atualiza cache local
@@ -81,19 +83,25 @@ class CadastroProvider extends ChangeNotifier {
         }
       }
       notifyListeners();
-      return area.nome;
+      return AreaSelecionada(id: area.id, nome: area.nome);
+    } on AppException catch (e) {
+      _erro = e.message;
+      notifyListeners();
+      return null;
     } catch (e) {
+      _erro = 'Não foi possível adicionar a área. Tente novamente.';
+      notifyListeners();
       return null;
     }
   }
 
   Future<bool> cadastrarProfessor({
-    required String uid,
+    required String id,
     required String email,
     required String nome,
     required String siape,
-    required List<String> areasTecnicas,
-    required List<String> areasInteresse,
+    required List<AreaSelecionada> areasTecnicas,
+    required List<AreaSelecionada> areasInteresse,
   }) async {
     try {
       _status = CadastroStatus.salvando;
@@ -101,7 +109,7 @@ class CadastroProvider extends ChangeNotifier {
       notifyListeners();
 
       final professor = Professor(
-        uid: uid,
+        id: id,
         email: email,
         nome: nome.trim(),
         criadoEm: DateTime.now(),
@@ -129,7 +137,7 @@ class CadastroProvider extends ChangeNotifier {
   }
 
   Future<bool> cadastrarDemandante({
-    required String uid,
+    required String id,
     required String email,
     required String nome,
     required String telefone,
@@ -143,7 +151,7 @@ class CadastroProvider extends ChangeNotifier {
       notifyListeners();
 
       final demandante = Demandante(
-        uid: uid,
+        id: id,
         email: email,
         nome: nome.trim(),
         criadoEm: DateTime.now(),

@@ -1,0 +1,34 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Nexus Tech • API",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "toolArgs": ["--dart-define=APP_BACKEND=api"]
+    },
+    {
+      "name": "Nexus Tech • API Web",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "chrome",
+      "toolArgs": ["--dart-define=APP_BACKEND=api", "--web-hostname=localhost", "--web-port=5173"]
+    },
+    {
+      "name": "Nexus Tech • Demonstração",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "toolArgs": ["--dart-define=APP_BACKEND=memory"]
+    },
+    {
+      "name": "Nexus Tech • Firebase",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "toolArgs": ["--dart-define=APP_BACKEND=firebase"]
+    }
+  ]
+}

@@ -1,10 +1,11 @@
+import './area_selecionada.dart';
 import 'enums.dart';
 import 'usuario.dart';
 
 class Professor extends Usuario {
   final String siape;
-  final List<String> areasTecnicas;
-  final List<String> areasInteresse;
+  final List<AreaSelecionada> areasTecnicas;
+  final List<AreaSelecionada> areasInteresse;
 
   /// Perfil habilitado a atuar na plataforma (UC04 R01). O admin liga/desliga
   /// pelo painel; um professor desativado não vê a prateleira nem executa
@@ -15,7 +16,7 @@ class Professor extends Usuario {
   final String? motivoDesativacao;
 
   Professor({
-    required super.uid,
+    required super.id,
     required super.email,
     required super.nome,
     required super.criadoEm,
@@ -30,14 +31,14 @@ class Professor extends Usuario {
 
   @override
   Map<String, dynamic> toMap() => {
-        'uid': uid,
+        'uid': id,
         'email': email,
         'nome': nome,
         'role': role.name,
         'criadoEm': criadoEm.toIso8601String(),
         'siape': siape,
-        'areasTecnicas': areasTecnicas,
-        'areasInteresse': areasInteresse,
+        'areasTecnicas': areasTecnicas.map((a) => a.nome).toList(),
+        'areasInteresse': areasInteresse.map((a) => a.nome).toList(),
         'ativo': ativo,
         'desativadoEm': desativadoEm?.toIso8601String(),
         'motivoDesativacao': motivoDesativacao,
@@ -45,13 +46,17 @@ class Professor extends Usuario {
       };
 
   factory Professor.fromMap(Map<String, dynamic> map) => Professor(
-        uid: map['uid'] as String,
+        id: map['uid'] as String,
         email: map['email'] as String,
         nome: map['nome'] as String,
         criadoEm: DateTime.parse(map['criadoEm'] as String),
         siape: map['siape'] as String,
-        areasTecnicas: List<String>.from(map['areasTecnicas'] ?? const []),
-        areasInteresse: List<String>.from(map['areasInteresse'] ?? const []),
+        areasTecnicas: List<String>.from(map['areasTecnicas'] ?? const [])
+            .map(AreaSelecionada.legada)
+            .toList(),
+        areasInteresse: List<String>.from(map['areasInteresse'] ?? const [])
+            .map(AreaSelecionada.legada)
+            .toList(),
         ativo: map['ativo'] as bool? ?? true,
         desativadoEm: DateTime.tryParse(map['desativadoEm'] as String? ?? ''),
         motivoDesativacao: map['motivoDesativacao'] as String?,

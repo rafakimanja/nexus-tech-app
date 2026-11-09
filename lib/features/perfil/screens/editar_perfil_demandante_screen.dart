@@ -56,7 +56,7 @@ class _EditarPerfilDemandanteScreenState
     final auth = context.read<AuthProvider>();
 
     final ok = await perfil.salvarDemandante(
-      uid: widget.demandante.uid,
+      id: widget.demandante.id,
       nome: _nome.text,
       telefone: _telefone.text,
       tipo: _tipo,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../app/theme.dart';
+import '../../../app/app_dependencies.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/models/demanda.dart';
 import '../../../core/models/demandante.dart';
@@ -29,19 +30,19 @@ class PerfilScreen extends StatefulWidget {
 }
 
 class _PerfilScreenState extends State<PerfilScreen> {
-  final _repository = DemandaRepository();
+  DemandaRepository get _repository => context.read<DemandaRepository>();
 
-  // Cacheia o stream das estatísticas por uid para não re-subscrever (e
+  // Cacheia o stream das estatísticas por id para não re-subscrever (e
   // piscar os números) a cada rebuild da tela.
   Stream<List<Demanda>>? _statsStream;
-  String? _statsUid;
+  String? _statsId;
 
   Stream<List<Demanda>> _streamEstatisticas(Usuario usuario) {
-    if (_statsStream != null && _statsUid == usuario.uid) return _statsStream!;
-    _statsUid = usuario.uid;
+    if (_statsStream != null && _statsId == usuario.id) return _statsStream!;
+    _statsId = usuario.id;
     _statsStream = usuario is Professor
-        ? _repository.listarDoProfessor(professorUid: usuario.uid)
-        : _repository.listarDoDemandante(demandanteUid: usuario.uid);
+        ? _repository.listarDoProfessor(professorId: usuario.id)
+        : _repository.listarDoDemandante(demandanteId: usuario.id);
     return _statsStream!;
   }
 
@@ -67,7 +68,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
     final auth = context.read<AuthProvider>();
 
     final ok = await perfil.trocarFoto(
-      uid: usuario.uid,
+      id: usuario.id,
       caminhoLocal: file.path!,
       formato: (file.extension ?? '').toLowerCase(),
     );
@@ -112,10 +113,10 @@ class _PerfilScreenState extends State<PerfilScreen> {
               Center(
                 child: PerfilAvatar(
                   fotoUrl: usuario.fotoUrl,
-                  googlePhotoUrl: auth.firebaseUser?.photoURL,
+                  googlePhotoUrl: auth.sessao?.fotoUrl,
                   nome: usuario.nome,
                   enviando: enviandoFoto,
-                  onEditar: () => _trocarFoto(usuario),
+                  onEditar: context.read<AppDependencies>().usaApi ? null : () => _trocarFoto(usuario),
                 ),
               ),
               const SizedBox(height: 16),
@@ -315,8 +316,12 @@ class _PerfilScreenState extends State<PerfilScreen> {
           label: 'Situação',
           valor: usuario.ativo ? 'Ativo' : 'Inativo',
         ),
-        _Chips(titulo: 'Áreas técnicas', itens: usuario.areasTecnicas),
-        _Chips(titulo: 'Áreas de interesse', itens: usuario.areasInteresse),
+        _Chips(
+            titulo: 'Áreas técnicas',
+            itens: usuario.areasTecnicas.map((a) => a.nome).toList()),
+        _Chips(
+            titulo: 'Áreas de interesse',
+            itens: usuario.areasInteresse.map((a) => a.nome).toList()),
       ];
     }
     return const [];

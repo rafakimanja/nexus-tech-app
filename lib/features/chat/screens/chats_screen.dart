@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../app/theme.dart';
+import '../../../app/app_dependencies.dart';
+import '../../../core/widgets/recurso_indisponivel.dart';
 import '../../../core/models/chat.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../demandas/widgets/estado_lista.dart';
-import '../../notificacoes/screens/notificacoes_screen.dart' show formatarQuando;
+import '../../notificacoes/screens/notificacoes_screen.dart'
+    show formatarQuando;
 import '../../notificacoes/widgets/sino_notificacoes.dart';
 import '../providers/chats_provider.dart';
 import 'chat_screen.dart';
@@ -18,7 +21,10 @@ class ChatsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final uid = context.watch<AuthProvider>().usuario?.uid;
+    if (context.read<AppDependencies>().usaApi) {
+      return const Center(child: RecursoIndisponivel('Conversas'));
+    }
+    final id = context.watch<AuthProvider>().usuario?.id;
     final provider = context.watch<ChatsProvider>();
 
     return Column(
@@ -31,7 +37,7 @@ class ChatsScreen extends StatelessWidget {
             onChanged: context.read<ChatsProvider>().atualizarBusca,
           ),
         ),
-        Expanded(child: _lista(context, provider, uid)),
+        Expanded(child: _lista(context, provider, id)),
       ],
     );
   }
@@ -59,7 +65,7 @@ class ChatsScreen extends StatelessWidget {
     );
   }
 
-  Widget _lista(BuildContext context, ChatsProvider provider, String? uid) {
+  Widget _lista(BuildContext context, ChatsProvider provider, String? id) {
     if (provider.carregando && provider.chats.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -71,7 +77,7 @@ class ChatsScreen extends StatelessWidget {
         mensagem: provider.erro!,
         acao: ElevatedButton(
           onPressed: () {
-            if (uid != null) provider.observar(uid);
+            if (id != null) provider.observar(id);
           },
           child: const Text('Tentar novamente'),
         ),
@@ -90,7 +96,7 @@ class ChatsScreen extends StatelessWidget {
       );
     }
 
-    if (uid == null) return const SizedBox.shrink();
+    if (id == null) return const SizedBox.shrink();
 
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -100,7 +106,7 @@ class ChatsScreen extends StatelessWidget {
         final chat = provider.chats[i];
         return _CartaoChat(
           chat: chat,
-          uid: uid,
+          id: id,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
               builder: (_) => ChatScreen(chatId: chat.id),
@@ -114,18 +120,18 @@ class ChatsScreen extends StatelessWidget {
 
 class _CartaoChat extends StatelessWidget {
   final Chat chat;
-  final String uid;
+  final String id;
   final VoidCallback onTap;
 
   const _CartaoChat({
     required this.chat,
-    required this.uid,
+    required this.id,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final naoLidas = chat.naoLidasDe(uid);
+    final naoLidas = chat.naoLidasDe(id);
     final temNaoLidas = naoLidas > 0;
 
     return Material(
@@ -152,7 +158,7 @@ class _CartaoChat extends StatelessWidget {
                     ? AppColors.primary.withValues(alpha: 0.12)
                     : Colors.grey.shade200,
                 child: Text(
-                  _iniciais(chat.outroNome(uid)),
+                  _iniciais(chat.outroNome(id)),
                   style: TextStyle(
                     color:
                         chat.ativo ? AppColors.primary : Colors.grey.shade600,
@@ -169,7 +175,7 @@ class _CartaoChat extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            chat.outroNome(uid),
+                            chat.outroNome(id),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(

@@ -20,7 +20,7 @@ import '../widgets/balao_mensagem.dart';
 /// ela. O que é global — lista de conversas e contador do badge — fica no
 /// `ChatsProvider`.
 class ChatScreen extends StatefulWidget {
-  /// Igual ao `demandaId` da demanda correspondente.
+  /// Identificador da conversa, obtido pelo repositório.
   final String chatId;
 
   const ChatScreen({super.key, required this.chatId});
@@ -30,7 +30,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final _repository = ChatRepository();
+  ChatRepository get _repository => context.read<ChatRepository>();
   final _controller = TextEditingController();
   final _scroll = ScrollController();
 
@@ -54,12 +54,12 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  String? get _uid => context.read<AuthProvider>().usuario?.uid;
+  String? get _id => context.read<AuthProvider>().usuario?.id;
 
   void _marcarLido() {
-    final uid = _uid;
-    if (uid == null) return;
-    _repository.marcarComoLido(chatId: widget.chatId, uid: uid);
+    final id = _id;
+    if (id == null) return;
+    _repository.marcarComoLido(chatId: widget.chatId, id: id);
   }
 
   void _rolarParaOFim({bool animado = true}) {
@@ -91,7 +91,7 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       await _repository.enviarMensagem(
         chatId: widget.chatId,
-        autorUid: usuario.uid,
+        autorId: usuario.id,
         autorNome: usuario.nome,
         texto: texto,
       );
@@ -124,7 +124,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final uid = context.watch<AuthProvider>().usuario?.uid;
+    final id = context.watch<AuthProvider>().usuario?.id;
 
     return Scaffold(
       body: SafeArea(
@@ -137,7 +137,7 @@ class _ChatScreenState extends State<ChatScreen> {
             }
 
             final chat = snap.data;
-            if (chat == null || uid == null) {
+            if (chat == null || id == null) {
               return Column(
                 children: [
                   _cabecalhoSimples(),
@@ -161,8 +161,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
             return Column(
               children: [
-                _cabecalho(chat, uid),
-                Expanded(child: _listaMensagens(chat, uid)),
+                _cabecalho(chat, id),
+                Expanded(child: _listaMensagens(chat, id)),
                 _rodape(chat),
               ],
             );
@@ -192,7 +192,7 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       );
 
-  Widget _cabecalho(Chat chat, String uid) {
+  Widget _cabecalho(Chat chat, String id) {
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
       decoration: BoxDecoration(
@@ -210,7 +210,7 @@ class _ChatScreenState extends State<ChatScreen> {
             radius: 20,
             backgroundColor: AppColors.primary.withValues(alpha: 0.12),
             child: Text(
-              _iniciais(chat.outroNome(uid)),
+              _iniciais(chat.outroNome(id)),
               style: const TextStyle(
                 color: AppColors.primary,
                 fontWeight: FontWeight.bold,
@@ -223,7 +223,7 @@ class _ChatScreenState extends State<ChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  chat.outroNome(uid),
+                  chat.outroNome(id),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -252,7 +252,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _listaMensagens(Chat chat, String uid) {
+  Widget _listaMensagens(Chat chat, String id) {
     return StreamBuilder<List<Mensagem>>(
       stream: _repository.observarMensagens(widget.chatId),
       builder: (context, snap) {
@@ -288,8 +288,8 @@ class _ChatScreenState extends State<ChatScreen> {
           itemBuilder: (context, i) {
             final m = mensagens[i];
             final anterior = i == 0 ? null : mensagens[i - 1];
-            final novoDia = anterior == null ||
-                !_mesmoDia(anterior.enviadaEm, m.enviadaEm);
+            final novoDia =
+                anterior == null || !_mesmoDia(anterior.enviadaEm, m.enviadaEm);
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -297,11 +297,11 @@ class _ChatScreenState extends State<ChatScreen> {
                 if (novoDia) SeparadorDia(dia: m.enviadaEm),
                 BalaoMensagem(
                   mensagem: m,
-                  meu: m.autorUid == uid,
+                  meu: m.autorId == id,
                   // `novoDia` já é verdadeiro quando não há mensagem anterior,
                   // então aqui `anterior` é necessariamente não-nulo.
                   agrupada: !novoDia &&
-                      anterior.autorUid == m.autorUid &&
+                      anterior.autorId == m.autorId &&
                       !anterior.sistema &&
                       !m.sistema,
                 ),

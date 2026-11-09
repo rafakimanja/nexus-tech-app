@@ -45,3 +45,7 @@ app.*.map.json
 /android/app/release
 *.jks
 *.keystore
+# Local tooling used for validation.
+.tools/
+# Widget Preview related
+.widget_preview/

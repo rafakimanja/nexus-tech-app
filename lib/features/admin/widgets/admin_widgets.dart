@@ -1,7 +1,44 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/exceptions/app_exception.dart';
 import '../../notificacoes/widgets/sino_notificacoes.dart';
+
+String mensagemErroAdmin(Object? erro) => erro is AppException
+    ? erro.message
+    : 'Não foi possível carregar os dados. Tente novamente.';
+
+class AvisoAdmin extends StatelessWidget {
+  final String mensagem;
+  const AvisoAdmin(this.mensagem, {super.key});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(mensagem, textAlign: TextAlign.center),
+      );
+}
+
+/// Mantém assinaturas de seções que saem da viewport de uma ListView.
+class SecaoPersistenteAdmin extends StatefulWidget {
+  final Widget child;
+  const SecaoPersistenteAdmin({super.key, required this.child});
+
+  @override
+  State<SecaoPersistenteAdmin> createState() => _SecaoPersistenteAdminState();
+}
+
+class _SecaoPersistenteAdminState extends State<SecaoPersistenteAdmin>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
+  }
+}
 
 /// Cabeçalho padrão das abas do painel: logo, título da seção e o sino.
 /// Repetido nas quatro abas para que o admin nunca perca a referência de onde
@@ -167,7 +204,8 @@ class GradeMetricas extends StatelessWidget {
       }
     }
 
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: linhas);
+    return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch, children: linhas);
   }
 }
 
@@ -318,8 +356,8 @@ class _DialogMotivoState extends State<DialogMotivo> {
   void _confirmar() {
     final texto = _controller.text.trim();
     if (texto.length < widget.minimoCaracteres) {
-      setState(() => _erro =
-          'Informe pelo menos ${widget.minimoCaracteres} caracteres');
+      setState(() =>
+          _erro = 'Informe pelo menos ${widget.minimoCaracteres} caracteres');
       return;
     }
     Navigator.of(context).pop(texto);
@@ -353,7 +391,8 @@ class _DialogMotivoState extends State<DialogMotivo> {
             maxLines: 4,
             maxLength: 400,
             textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(hintText: widget.hint, errorText: _erro),
+            decoration:
+                InputDecoration(hintText: widget.hint, errorText: _erro),
             onChanged: (_) {
               if (_erro != null) setState(() => _erro = null);
             },

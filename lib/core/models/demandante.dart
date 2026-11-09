@@ -20,7 +20,7 @@ class Demandante extends Usuario {
   final String? motivoBanimento;
 
   Demandante({
-    required super.uid,
+    required super.id,
     required super.email,
     required super.nome,
     required super.criadoEm,
@@ -41,7 +41,7 @@ class Demandante extends Usuario {
 
   @override
   Map<String, dynamic> toMap() => {
-        'uid': uid,
+        'uid': id,
         'email': email,
         'nome': nome,
         'role': role.name,
@@ -58,7 +58,7 @@ class Demandante extends Usuario {
       };
 
   factory Demandante.fromMap(Map<String, dynamic> map) => Demandante(
-        uid: map['uid'] as String,
+        id: map['uid'] as String,
         email: map['email'] as String,
         nome: map['nome'] as String,
         criadoEm: DateTime.parse(map['criadoEm'] as String),

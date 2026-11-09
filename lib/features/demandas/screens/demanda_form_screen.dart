@@ -113,7 +113,8 @@ class _DemandaFormScreenState extends State<DemandaFormScreen> {
       form.resetar();
       if (_ehEdicao) {
         try {
-          final anexos = await DemandaRepository()
+          final anexos = await context
+              .read<DemandaRepository>()
               .buscarAnexos(widget.demandaExistente!.id);
           if (mounted) form.carregarAnexosExistentes(anexos);
         } catch (_) {
@@ -182,14 +183,14 @@ class _DemandaFormScreenState extends State<DemandaFormScreen> {
     final ok = _ehEdicao
         ? await form.editar(
             demandaId: widget.demandaExistente!.id,
-            autorUid: usuario.uid,
+            autorId: usuario.id,
             titulo: _titulo.text,
             descricao: _descricao.text,
             publicoAlvo: publicoFinal,
             impacto: _impacto.text,
           )
         : await form.criar(
-            demandanteUid: usuario.uid,
+            demandanteId: usuario.id,
             demandanteNome: usuario.nome,
             demandanteTipo: usuario.tipo,
             titulo: _titulo.text,

@@ -7,7 +7,8 @@ import '../../../core/models/demandante.dart';
 import '../../../core/models/denuncia.dart';
 import '../../../core/repositories/denuncia_repository.dart';
 import '../../demandas/widgets/demanda_detalhe_widgets.dart';
-import '../../notificacoes/screens/notificacoes_screen.dart' show formatarQuando;
+import '../../notificacoes/screens/notificacoes_screen.dart'
+    show formatarQuando;
 import '../providers/admin_provider.dart';
 import '../widgets/admin_widgets.dart';
 import 'admin_demandantes_screen.dart' show ajustarStrikesComDialogo;
@@ -30,13 +31,16 @@ class AdminDemandanteDetalhesScreen extends StatefulWidget {
 
 class _AdminDemandanteDetalhesScreenState
     extends State<AdminDemandanteDetalhesScreen> {
-  final _denunciaRepository = DenunciaRepository();
+  DenunciaRepository get _denunciaRepository =>
+      context.read<DenunciaRepository>();
+  late final _denuncias =
+      _denunciaRepository.observarDoDemandante(widget.demandante.id);
 
   /// Versão viva do demandante, vinda do stream do painel — a tela reflete o
   /// efeito das próprias ações sem precisar voltar e reabrir.
   Demandante get _demandante {
     for (final d in context.watch<AdminProvider>().demandantes) {
-      if (d.uid == widget.demandante.uid) return d;
+      if (d.id == widget.demandante.id) return d;
     }
     return widget.demandante;
   }
@@ -44,7 +48,7 @@ class _AdminDemandanteDetalhesScreenState
   @override
   Widget build(BuildContext context) {
     final d = _demandante;
-    final processando = context.watch<AdminProvider>().processando(d.uid);
+    final processando = context.watch<AdminProvider>().processando(d.id);
 
     return Scaffold(
       body: SafeArea(
@@ -72,9 +76,8 @@ class _AdminDemandanteDetalhesScreenState
                       Etiqueta(
                         texto: d.banido ? 'Suspensa' : 'Ativa',
                         cor: d.banido ? AppColors.error : AppColors.success,
-                        icone: d.banido
-                            ? Icons.block
-                            : Icons.check_circle_outline,
+                        icone:
+                            d.banido ? Icons.block : Icons.check_circle_outline,
                       ),
                     ],
                   ),
@@ -113,7 +116,11 @@ class _AdminDemandanteDetalhesScreenState
                 ],
               ),
             ),
-            _barraAcoes(d, processando),
+            if (context.watch<AdminProvider>().suportaModeracao)
+              _barraAcoes(d, processando)
+            else
+              const AvisoAdmin(
+                  'Alteração de advertências e suspensão de contas ainda não estão disponíveis no servidor.'),
           ],
         ),
       ),
@@ -172,9 +179,18 @@ class _AdminDemandanteDetalhesScreenState
   }
 
   Widget _historicoDenuncias(Demandante d) {
-    return StreamBuilder<List<Denuncia>>(
-      stream: _denunciaRepository.observarDoDemandante(d.uid),
+    if (!context.watch<AdminProvider>().suportaModeracao) {
+      return const AvisoAdmin(
+          'Histórico de denúncias ainda não está disponível no servidor.');
+    }
+    return SecaoPersistenteAdmin(
+        child: StreamBuilder<List<Denuncia>>(
+      stream: _denuncias,
       builder: (context, snap) {
+        if (snap.hasError) return AvisoAdmin(mensagemErroAdmin(snap.error));
+        if (!snap.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
         final denuncias = snap.data ?? const <Denuncia>[];
 
         return Column(
@@ -256,7 +272,7 @@ class _AdminDemandanteDetalhesScreenState
           ],
         );
       },
-    );
+    ));
   }
 
   Widget _barraAcoes(Demandante d, bool processando) {
@@ -294,8 +310,7 @@ class _AdminDemandanteDetalhesScreenState
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(d.banido ? Icons.lock_open : Icons.remove,
-                          size: 18),
+                      Icon(d.banido ? Icons.lock_open : Icons.remove, size: 18),
                       const SizedBox(width: 8),
                       Text(
                         d.banido ? 'Reativar conta' : 'Remover advertência',
@@ -363,7 +378,6 @@ class _AdminDemandanteDetalhesScreenState
     );
   }
 
-  String _data(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')}/'
+  String _data(DateTime d) => '${d.day.toString().padLeft(2, '0')}/'
       '${d.month.toString().padLeft(2, '0')}/${d.year}';
 }

@@ -135,7 +135,7 @@ void main() {
     }) =>
         Demanda(
           id: 'd1',
-          demandanteUid: 'u1',
+          demandanteId: 'u1',
           demandanteNome: 'Fulano',
           demandanteTipo: TipoDemandante.empresa,
           titulo: 'Título',

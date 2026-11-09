@@ -4,35 +4,33 @@ import '../../app/theme.dart';
 
 /// Conversa 1:1 entre o demandante e o professor de uma demanda (UC11 R03).
 ///
-/// **O ID do documento é o próprio `demandaId`.** Essa escolha torna a criação
-/// idempotente: assumir a mesma demanda duas vezes (retry de rede, duplo
-/// clique) escreve no mesmo documento em vez de criar conversas paralelas.
-/// Não há chat sem demanda, e não há duas conversas para a mesma demanda.
+/// Uma conversa pertence a uma demanda. A igualdade entre IDs é um detalhe
+/// do adaptador Firebase, não uma regra para outros backends.
 ///
 /// [participantes] duplica os dois uids num array só para viabilizar a query
 /// `array-contains` da lista de conversas — Firestore não faz OR entre dois
 /// campos diferentes numa única query.
 class Chat {
-  /// Igual ao `demandaId` (ver docstring da classe).
+  /// Identificador próprio da conversa.
   final String id;
 
   final String demandaId;
   final String tituloDemanda;
 
-  final String demandanteUid;
+  final String demandanteId;
   final String demandanteNome;
-  final String professorUid;
+  final String professorId;
   final String professorNome;
 
-  /// `[demandanteUid, professorUid]` — usado no `array-contains` da listagem.
+  /// `[demandanteId, professorId]` — usado no `array-contains` da listagem.
   final List<String> participantes;
 
   // --- denormalização da última mensagem (evita N leituras na listagem) ---
   final String? ultimaMensagem;
-  final String? ultimaMensagemAutorUid;
+  final String? ultimaMensagemAutorId;
   final DateTime? ultimaMensagemEm;
 
-  /// Contador de não lidas por uid: `{ '<uid>': 3 }`. Incrementado
+  /// Contador de não lidas por id: `{ '<id>': 3 }`. Incrementado
   /// atomicamente (`FieldValue.increment`) por quem envia e zerado por quem lê.
   final Map<String, int> naoLidas;
 
@@ -46,40 +44,39 @@ class Chat {
     required this.id,
     required this.demandaId,
     required this.tituloDemanda,
-    required this.demandanteUid,
+    required this.demandanteId,
     required this.demandanteNome,
-    required this.professorUid,
+    required this.professorId,
     required this.professorNome,
     required this.participantes,
     required this.naoLidas,
     required this.criadoEm,
     this.ultimaMensagem,
-    this.ultimaMensagemAutorUid,
+    this.ultimaMensagemAutorId,
     this.ultimaMensagemEm,
     this.ativo = true,
   });
 
-  /// Não lidas para [uid]. Zero quando o uid não é participante.
-  int naoLidasDe(String uid) => naoLidas[uid] ?? 0;
+  /// Não lidas para [id]. Zero quando o id não é participante.
+  int naoLidasDe(String id) => naoLidas[id] ?? 0;
 
-  /// Nome do outro lado da conversa, do ponto de vista de [uid].
-  String outroNome(String uid) =>
-      uid == demandanteUid ? professorNome : demandanteNome;
+  /// Nome do outro lado da conversa, do ponto de vista de [id].
+  String outroNome(String id) =>
+      id == demandanteId ? professorNome : demandanteNome;
 
-  /// Uid do outro lado da conversa, do ponto de vista de [uid].
-  String outroUid(String uid) =>
-      uid == demandanteUid ? professorUid : demandanteUid;
+  /// Id do outro lado da conversa, do ponto de vista de [id].
+  String outroId(String id) => id == demandanteId ? professorId : demandanteId;
 
   Map<String, dynamic> toMap() => {
         'demandaId': demandaId,
         'tituloDemanda': tituloDemanda,
-        'demandanteUid': demandanteUid,
+        'demandanteUid': demandanteId,
         'demandanteNome': demandanteNome,
-        'professorUid': professorUid,
+        'professorUid': professorId,
         'professorNome': professorNome,
         'participantes': participantes,
         'ultimaMensagem': ultimaMensagem,
-        'ultimaMensagemAutorUid': ultimaMensagemAutorUid,
+        'ultimaMensagemAutorUid': ultimaMensagemAutorId,
         'ultimaMensagemEm': ultimaMensagemEm?.toIso8601String(),
         'naoLidas': naoLidas,
         'ativo': ativo,
@@ -90,13 +87,13 @@ class Chat {
         id: id,
         demandaId: map['demandaId'] as String? ?? id,
         tituloDemanda: map['tituloDemanda'] as String? ?? 'Demanda',
-        demandanteUid: map['demandanteUid'] as String,
+        demandanteId: map['demandanteUid'] as String,
         demandanteNome: map['demandanteNome'] as String? ?? 'Demandante',
-        professorUid: map['professorUid'] as String,
+        professorId: map['professorUid'] as String,
         professorNome: map['professorNome'] as String? ?? 'Professor',
         participantes: List<String>.from(map['participantes'] ?? const []),
         ultimaMensagem: map['ultimaMensagem'] as String?,
-        ultimaMensagemAutorUid: map['ultimaMensagemAutorUid'] as String?,
+        ultimaMensagemAutorId: map['ultimaMensagemAutorUid'] as String?,
         ultimaMensagemEm: _parseData(map['ultimaMensagemEm']),
         // Firestore devolve Map<String, dynamic>; os contadores podem vir como
         // int ou num dependendo de como foram escritos (increment vs. set).
@@ -120,7 +117,7 @@ class Chat {
 /// aparecem centralizadas e sem balão — servem de marco temporal na conversa.
 class Mensagem {
   final String id;
-  final String autorUid;
+  final String autorId;
   final String autorNome;
   final String texto;
   final DateTime enviadaEm;
@@ -128,7 +125,7 @@ class Mensagem {
 
   const Mensagem({
     required this.id,
-    required this.autorUid,
+    required this.autorId,
     required this.autorNome,
     required this.texto,
     required this.enviadaEm,
@@ -136,7 +133,7 @@ class Mensagem {
   });
 
   Map<String, dynamic> toMap() => {
-        'autorUid': autorUid,
+        'autorUid': autorId,
         'autorNome': autorNome,
         'texto': texto,
         'enviadaEm': enviadaEm.toIso8601String(),
@@ -145,12 +142,11 @@ class Mensagem {
 
   factory Mensagem.fromMap(String id, Map<String, dynamic> map) => Mensagem(
         id: id,
-        autorUid: map['autorUid'] as String? ?? '',
+        autorId: map['autorUid'] as String? ?? '',
         autorNome: map['autorNome'] as String? ?? '',
         texto: map['texto'] as String? ?? '',
-        enviadaEm:
-            DateTime.tryParse(map['enviadaEm'] as String? ?? '') ??
-                DateTime.now(),
+        enviadaEm: DateTime.tryParse(map['enviadaEm'] as String? ?? '') ??
+            DateTime.now(),
         sistema: map['sistema'] as bool? ?? false,
       );
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../app/theme.dart';
+import '../../../app/app_dependencies.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../notificacoes/widgets/sino_notificacoes.dart';
 import '../../chat/providers/chats_provider.dart';
@@ -36,13 +37,15 @@ class _MinhasDemandasScreenState extends State<MinhasDemandasScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final uid = context.read<AuthProvider>().usuario?.uid;
-      if (uid == null) return;
-      context.read<DemandasProvider>().observar(uid);
+      final id = context.read<AuthProvider>().usuario?.id;
+      if (id == null) return;
+      context.read<DemandasProvider>().observar(id);
       // Conversas e notificações são globais: os badges precisam existir em
       // qualquer aba, não só quando a respectiva tela está aberta.
-      context.read<ChatsProvider>().observar(uid);
-      context.read<NotificacoesProvider>().observar(uid);
+      if (!context.read<AppDependencies>().usaApi) {
+        context.read<ChatsProvider>().observar(id);
+      }
+      context.read<NotificacoesProvider>().observar(id);
     });
   }
 
@@ -204,8 +207,8 @@ class _MinhasDemandasScreenState extends State<MinhasDemandasScreen> {
             mensagem: provider.erro!,
             acao: ElevatedButton(
               onPressed: () {
-                final uid = context.read<AuthProvider>().usuario?.uid;
-                if (uid != null) provider.observar(uid);
+                final id = context.read<AuthProvider>().usuario?.id;
+                if (id != null) provider.observar(id);
               },
               child: const Text('Tentar novamente'),
             ),
@@ -276,9 +279,7 @@ class _MinhasDemandasScreenState extends State<MinhasDemandasScreen> {
                 tooltip: 'Conversas',
                 icon: comBadge(
                   Icon(
-                    _aba == 1
-                        ? Icons.chat_bubble
-                        : Icons.chat_bubble_outline,
+                    _aba == 1 ? Icons.chat_bubble : Icons.chat_bubble_outline,
                     color:
                         _aba == 1 ? AppColors.primary : AppColors.textSecondary,
                     size: 28,

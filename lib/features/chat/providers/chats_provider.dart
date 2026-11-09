@@ -15,14 +15,14 @@ import '../../../core/repositories/chat_repository.dart';
 class ChatsProvider extends ChangeNotifier {
   final ChatRepository _repository;
 
-  ChatsProvider({ChatRepository? repository})
-      : _repository = repository ?? ChatRepository();
+  ChatsProvider({required ChatRepository repository})
+      : _repository = repository;
 
   StreamSubscription<List<Chat>>? _sub;
   List<Chat> _chats = const [];
   bool _carregando = false;
   String? _erro;
-  String? _uid;
+  String? _id;
   String _busca = '';
 
   bool get carregando => _carregando;
@@ -34,32 +34,32 @@ class ChatsProvider extends ChangeNotifier {
   List<Chat> get chats {
     if (_busca.isEmpty) return _chats;
     final q = _busca.toLowerCase();
-    final uid = _uid;
+    final id = _id;
     return _chats.where((c) {
-      final outro = uid == null ? '' : c.outroNome(uid).toLowerCase();
+      final outro = id == null ? '' : c.outroNome(id).toLowerCase();
       return c.tituloDemanda.toLowerCase().contains(q) || outro.contains(q);
     }).toList();
   }
 
   /// Soma das não lidas de todas as conversas — o número do badge.
   int get totalNaoLidas {
-    final uid = _uid;
-    if (uid == null) return 0;
-    return _chats.fold(0, (soma, c) => soma + c.naoLidasDe(uid));
+    final id = _id;
+    if (id == null) return 0;
+    return _chats.fold(0, (soma, c) => soma + c.naoLidasDe(id));
   }
 
   bool get temNaoLidas => totalNaoLidas > 0;
 
-  void observar(String uid) {
-    if (_uid == uid && _sub != null) return;
-    _uid = uid;
+  void observar(String id) {
+    if (_id == id && _sub != null) return;
+    _id = id;
 
     _carregando = true;
     _erro = null;
     notifyListeners();
 
     _sub?.cancel();
-    _sub = _repository.observarChats(uid).listen(
+    _sub = _repository.observarChats(id).listen(
       (lista) {
         _chats = lista;
         _carregando = false;
@@ -84,7 +84,7 @@ class ChatsProvider extends ChangeNotifier {
   void limpar() {
     _sub?.cancel();
     _sub = null;
-    _uid = null;
+    _id = null;
     _chats = const [];
     _busca = '';
     _erro = null;

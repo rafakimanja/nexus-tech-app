@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../app/theme.dart';
+import '../../../app/app_dependencies.dart';
+import '../../../core/widgets/recurso_indisponivel.dart';
 import '../../../core/exceptions/app_exception.dart';
 import '../../../core/models/anexo.dart';
 import '../../../core/models/demanda.dart';
@@ -10,7 +12,7 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/repositories/demanda_repository.dart';
 import '../../../core/repositories/denuncia_repository.dart';
 import '../../../core/repositories/usuario_repository.dart';
-import '../../chat/screens/chat_screen.dart';
+import '../../chat/abrir_chat_demanda.dart';
 import '../providers/acao_demanda_provider.dart';
 import '../widgets/anexos_visualizacao.dart';
 import '../widgets/demanda_detalhe_widgets.dart';
@@ -34,9 +36,10 @@ class DemandaDetalhesProfessorScreen extends StatefulWidget {
 
 class _DemandaDetalhesProfessorScreenState
     extends State<DemandaDetalhesProfessorScreen> {
-  final _repository = DemandaRepository();
-  final _denunciaRepository = DenunciaRepository();
-  final _usuarioRepository = UsuarioRepository();
+  DemandaRepository get _repository => context.read<DemandaRepository>();
+  DenunciaRepository get _denunciaRepository =>
+      context.read<DenunciaRepository>();
+  UsuarioRepository get _usuarioRepository => context.read<UsuarioRepository>();
 
   /// `null` enquanto a checagem não voltou — o botão só aparece depois, para
   /// não oferecer "denunciar" a quem já denunciou e receber um erro no clique.
@@ -50,11 +53,12 @@ class _DemandaDetalhesProfessorScreenState
   }
 
   Future<void> _verificarDenuncia() async {
+    if (context.read<AppDependencies>().usaApi) return;
     final prof = context.read<AuthProvider>().usuario;
     if (prof is! Professor) return;
     final ja = await _denunciaRepository.jaDenunciou(
       demandaId: widget.demandaId,
-      professorUid: prof.uid,
+      professorId: prof.id,
     );
     if (mounted) setState(() => _jaDenunciou = ja);
   }
@@ -95,7 +99,7 @@ class _DemandaDetalhesProfessorScreenState
     final acao = context.read<AcaoDemandaProvider>();
     final ok = await acao.marcarParaAnalise(
       demandaId: d.id,
-      professorUid: prof.uid,
+      professorId: prof.id,
       professorNome: prof.nome,
     );
     if (ok) {
@@ -112,7 +116,7 @@ class _DemandaDetalhesProfessorScreenState
     final prof = _professor;
     if (prof == null) return;
     final acao = context.read<AcaoDemandaProvider>();
-    final ok = await acao.rejeitar(demandaId: d.id, professorUid: prof.uid);
+    final ok = await acao.rejeitar(demandaId: d.id, professorId: prof.id);
     if (ok) {
       _feedback('Demanda devolvida à prateleira.', AppColors.success);
       if (mounted) Navigator.of(context).pop();
@@ -125,7 +129,7 @@ class _DemandaDetalhesProfessorScreenState
     if (!_exigeProfessorAtivo()) return;
     final prof = _professor!;
     final acao = context.read<AcaoDemandaProvider>();
-    final ok = await acao.assumir(demandaId: d.id, professorUid: prof.uid);
+    final ok = await acao.assumir(demandaId: d.id, professorId: prof.id);
     if (ok) {
       _feedback(
         'Demanda assumida! O demandante foi notificado.',
@@ -139,7 +143,7 @@ class _DemandaDetalhesProfessorScreenState
   /// UC-admin — denúncia de demanda pelo professor.
   ///
   /// Os uids dos admins são buscados na hora porque a notificação precisa de
-  /// uid, e admins entram na plataforma ao longo do tempo. A falha dessa busca
+  /// id, e admins entram na plataforma ao longo do tempo. A falha dessa busca
   /// não impede a denúncia: a fila do painel é lida do Firestore de qualquer
   /// forma, a notificação é só o atalho.
   Future<void> _denunciar(Demanda d) async {
@@ -154,14 +158,16 @@ class _DemandaDetalhesProfessorScreenState
 
     setState(() => _denunciando = true);
     try {
-      final adminUids = await _usuarioRepository.buscarAdminUids();
+      final adminIds = context.read<AppDependencies>().usaApi
+          ? <String>{}
+          : await _usuarioRepository.buscarAdminIds();
       await _denunciaRepository.denunciar(
         demanda: d,
-        professorUid: prof.uid,
+        professorId: prof.id,
         professorNome: prof.nome,
         motivo: dados.motivo,
         descricao: dados.descricao,
-        adminUids: adminUids,
+        adminIds: adminIds,
       );
       if (!mounted) return;
       setState(() => _jaDenunciou = true);
@@ -179,9 +185,7 @@ class _DemandaDetalhesProfessorScreenState
   }
 
   void _abrirChat(Demanda d) {
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => ChatScreen(chatId: d.id),
-    ));
+    abrirChatDaDemanda(context, d.id);
   }
 
   Future<void> _concluir(Demanda d) async {
@@ -189,8 +193,7 @@ class _DemandaDetalhesProfessorScreenState
     if (prof == null) return;
     final concluiu = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) =>
-            EntregaDemandaScreen(demanda: d, professorUid: prof.uid),
+        builder: (_) => EntregaDemandaScreen(demanda: d, professorId: prof.id),
       ),
     );
     if (concluiu == true) {
@@ -237,7 +240,7 @@ class _DemandaDetalhesProfessorScreenState
 
   Widget _buildConteudo(Demanda demanda) {
     final prof = _professor;
-    final souResponsavel = prof != null && demanda.professorUid == prof.uid;
+    final souResponsavel = prof != null && demanda.professorId == prof.id;
 
     return Column(
       children: [
@@ -298,30 +301,34 @@ class _DemandaDetalhesProfessorScreenState
                   conteudo: demanda.descricaoSolucao!,
                 ),
               ],
-              if (_podeConversar(demanda, souResponsavel)) ...[
+              if (!context.read<AppDependencies>().usaApi &&
+                  _podeConversar(demanda, souResponsavel)) ...[
                 const SizedBox(height: 24),
                 _botaoConversa(demanda),
               ],
               const SizedBox(height: 24),
-              StreamBuilder<List<Anexo>>(
-                stream: _repository.listarAnexos(demanda.id),
-                builder: (context, s) {
-                  if (s.connectionState == ConnectionState.waiting &&
-                      !s.hasData) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Center(
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+              if (context.read<AppDependencies>().usaApi)
+                const RecursoIndisponivel('Anexos')
+              else
+                StreamBuilder<List<Anexo>>(
+                  stream: _repository.listarAnexos(demanda.id),
+                  builder: (context, s) {
+                    if (s.connectionState == ConnectionState.waiting &&
+                        !s.hasData) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
                         ),
-                      ),
-                    );
-                  }
-                  return AnexosVisualizacao(anexos: s.data ?? const []);
-                },
-              ),
+                      );
+                    }
+                    return AnexosVisualizacao(anexos: s.data ?? const []);
+                  },
+                ),
               const SizedBox(height: 24),
               _linkDenuncia(demanda),
             ],
@@ -356,9 +363,11 @@ class _DemandaDetalhesProfessorScreenState
   /// Denunciar é uma ação rara e de peso: fica no fim do conteúdo, discreta,
   /// e não disputa espaço com as ações do ciclo de vida na barra inferior.
   Widget _linkDenuncia(Demanda d) {
-    if (_jaDenunciou == null) return const SizedBox.shrink();
+    if (_jaDenunciou == null && !context.read<AppDependencies>().usaApi) {
+      return const SizedBox.shrink();
+    }
 
-    if (_jaDenunciou!) {
+    if (_jaDenunciou == true) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

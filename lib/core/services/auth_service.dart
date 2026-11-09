@@ -1,29 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import '../models/sessao_usuario.dart';
 
-class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
-
-  User? get currentUser => _auth.currentUser;
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
-
-  Future<User?> signInWithGoogle() async {
-    final googleUser = await _googleSignIn.signIn();
-    if (googleUser == null) return null; // usuário cancelou
-
-    final googleAuth = await googleUser.authentication;
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    final result = await _auth.signInWithCredential(credential);
-    return result.user;
-  }
-
-  Future<void> signOut() async {
-    await _googleSignIn.signOut();
-    await _auth.signOut();
-  }
+/// Identidade autenticada, sem expor tipos ou tokens do provedor à interface.
+abstract interface class AuthService {
+  SessaoUsuario? get currentUser;
+  Stream<SessaoUsuario?> get authStateChanges;
+  Future<SessaoUsuario?> signInWithGoogle();
+  Future<void> signOut();
 }

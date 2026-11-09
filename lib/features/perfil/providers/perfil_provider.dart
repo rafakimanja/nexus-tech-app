@@ -1,3 +1,4 @@
+import '../../../core/models/area_selecionada.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../core/exceptions/app_exception.dart';
@@ -12,10 +13,10 @@ class PerfilProvider extends ChangeNotifier {
   final FotoPerfilRepository _fotoRepository;
 
   PerfilProvider({
-    UsuarioRepository? usuarioRepository,
-    FotoPerfilRepository? fotoRepository,
-  })  : _usuarioRepository = usuarioRepository ?? UsuarioRepository(),
-        _fotoRepository = fotoRepository ?? FotoPerfilRepository();
+    required UsuarioRepository usuarioRepository,
+    required FotoPerfilRepository fotoRepository,
+  })  : _usuarioRepository = usuarioRepository,
+        _fotoRepository = fotoRepository;
 
   bool _salvando = false;
   bool _enviandoFoto = false;
@@ -28,14 +29,14 @@ class PerfilProvider extends ChangeNotifier {
   // ============== dados ==============
 
   Future<bool> salvarDemandante({
-    required String uid,
+    required String id,
     required String nome,
     required String telefone,
     required TipoDemandante tipo,
     required String endereco,
   }) {
     return _salvar(() => _usuarioRepository.atualizarDemandante(
-          uid: uid,
+          id: id,
           nome: nome,
           telefone: telefone,
           tipo: tipo,
@@ -44,13 +45,13 @@ class PerfilProvider extends ChangeNotifier {
   }
 
   Future<bool> salvarProfessor({
-    required String uid,
+    required String id,
     required String nome,
-    required List<String> areasTecnicas,
-    required List<String> areasInteresse,
+    required List<AreaSelecionada> areasTecnicas,
+    required List<AreaSelecionada> areasInteresse,
   }) {
     return _salvar(() => _usuarioRepository.atualizarProfessor(
-          uid: uid,
+          id: id,
           nome: nome,
           areasTecnicas: areasTecnicas,
           areasInteresse: areasInteresse,
@@ -86,7 +87,7 @@ class PerfilProvider extends ChangeNotifier {
   /// Retorna `true` em sucesso. A tela recarrega o usuário depois para
   /// refletir a nova `fotoUrl`.
   Future<bool> trocarFoto({
-    required String uid,
+    required String id,
     required String caminhoLocal,
     required String formato,
   }) async {
@@ -96,11 +97,11 @@ class PerfilProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final url = await _fotoRepository.enviarFoto(
-        uid: uid,
+        id: id,
         caminhoLocal: caminhoLocal,
         formato: formato,
       );
-      await _usuarioRepository.atualizarFotoUrl(uid: uid, fotoUrl: url);
+      await _usuarioRepository.atualizarFotoUrl(id: id, fotoUrl: url);
       _enviandoFoto = false;
       notifyListeners();
       return true;

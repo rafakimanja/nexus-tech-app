@@ -18,12 +18,14 @@ import '../../../core/repositories/denuncia_repository.dart';
 class AdminProvider extends ChangeNotifier {
   final AdminRepository _adminRepository;
   final DenunciaRepository _denunciaRepository;
+  final bool suportaModeracao;
 
   AdminProvider({
-    AdminRepository? adminRepository,
-    DenunciaRepository? denunciaRepository,
-  })  : _adminRepository = adminRepository ?? AdminRepository(),
-        _denunciaRepository = denunciaRepository ?? DenunciaRepository();
+    required AdminRepository adminRepository,
+    required DenunciaRepository denunciaRepository,
+    this.suportaModeracao = true,
+  })  : _adminRepository = adminRepository,
+        _denunciaRepository = denunciaRepository;
 
   StreamSubscription<List<Denuncia>>? _subDenuncias;
   StreamSubscription<List<Professor>>? _subProfessores;
@@ -38,6 +40,9 @@ class AdminProvider extends ChangeNotifier {
   bool _carregandoDemandantes = false;
 
   String? _erro;
+  String? _erroDenuncias;
+  String? _erroProfessores;
+  String? _erroDemandantes;
   String? _processandoId;
   bool _observando = false;
 
@@ -48,6 +53,9 @@ class AdminProvider extends ChangeNotifier {
   // ============== getters ==============
 
   String? get erro => _erro;
+  String? get erroDenuncias => _erroDenuncias;
+  String? get erroProfessores => _erroProfessores;
+  String? get erroDemandantes => _erroDemandantes;
   bool processando(String id) => _processandoId == id;
   bool get temAlgoProcessando => _processandoId != null;
 
@@ -119,6 +127,7 @@ class AdminProvider extends ChangeNotifier {
     _subDenuncias = _denunciaRepository.observarTodas().listen(
       (lista) {
         _denuncias = lista;
+        _erroDenuncias = null;
         _carregandoDenuncias = false;
         notifyListeners();
       },
@@ -130,6 +139,7 @@ class AdminProvider extends ChangeNotifier {
     _subProfessores = _adminRepository.observarProfessores().listen(
       (lista) {
         _professores = lista;
+        _erroProfessores = null;
         _carregandoProfessores = false;
         notifyListeners();
       },
@@ -141,6 +151,7 @@ class AdminProvider extends ChangeNotifier {
     _subDemandantes = _adminRepository.observarDemandantes().listen(
       (lista) {
         _demandantes = lista;
+        _erroDemandantes = null;
         _carregandoDemandantes = false;
         notifyListeners();
       },
@@ -170,15 +181,29 @@ class AdminProvider extends ChangeNotifier {
     _buscaProfessores = '';
     _buscaDemandantes = '';
     _erro = null;
+    _erroDenuncias = null;
+    _erroProfessores = null;
+    _erroDemandantes = null;
+    _carregandoDenuncias = false;
+    _carregandoProfessores = false;
+    _carregandoDemandantes = false;
     _processandoId = null;
     notifyListeners();
   }
 
   void _falhaStream(Object e, String recurso, VoidCallback desligarLoading) {
     desligarLoading();
-    _erro = e is AppException
+    final mensagem = e is AppException
         ? e.message
         : 'Não foi possível carregar a lista de $recurso.';
+    switch (recurso) {
+      case 'denúncias':
+        _erroDenuncias = mensagem;
+      case 'professores':
+        _erroProfessores = mensagem;
+      case 'demandantes':
+        _erroDemandantes = mensagem;
+    }
     notifyListeners();
   }
 
@@ -206,7 +231,7 @@ class AdminProvider extends ChangeNotifier {
   Future<ResultadoJulgamento?> julgar({
     required Denuncia denuncia,
     required bool procedente,
-    required String adminUid,
+    required String adminId,
     required String adminNome,
     required String parecer,
   }) async {
@@ -219,7 +244,7 @@ class AdminProvider extends ChangeNotifier {
       final resultado = await _denunciaRepository.julgar(
         denuncia: denuncia,
         procedente: procedente,
-        adminUid: adminUid,
+        adminId: adminId,
         adminNome: adminNome,
         parecer: parecer,
       );
@@ -239,16 +264,16 @@ class AdminProvider extends ChangeNotifier {
   Future<bool> definirProfessorAtivo({
     required Professor professor,
     required bool ativo,
-    required String adminUid,
+    required String adminId,
     required String adminNome,
     String? motivo,
   }) {
     return _executar(
-      professor.uid,
+      professor.id,
       () => _adminRepository.definirProfessorAtivo(
         professor: professor,
         ativo: ativo,
-        adminUid: adminUid,
+        adminId: adminId,
         adminNome: adminNome,
         motivo: motivo,
       ),
@@ -258,16 +283,16 @@ class AdminProvider extends ChangeNotifier {
   Future<bool> ajustarStrikes({
     required Demandante demandante,
     required int novoTotal,
-    required String adminUid,
+    required String adminId,
     required String adminNome,
     required String motivo,
   }) {
     return _executar(
-      demandante.uid,
+      demandante.id,
       () => _adminRepository.ajustarStrikes(
         demandante: demandante,
         novoTotal: novoTotal,
-        adminUid: adminUid,
+        adminId: adminId,
         adminNome: adminNome,
         motivo: motivo,
       ),
@@ -276,15 +301,15 @@ class AdminProvider extends ChangeNotifier {
 
   Future<bool> reverterBanimento({
     required Demandante demandante,
-    required String adminUid,
+    required String adminId,
     required String adminNome,
     required String motivo,
   }) {
     return _executar(
-      demandante.uid,
+      demandante.id,
       () => _adminRepository.reverterBanimento(
         demandante: demandante,
-        adminUid: adminUid,
+        adminId: adminId,
         adminNome: adminNome,
         motivo: motivo,
       ),

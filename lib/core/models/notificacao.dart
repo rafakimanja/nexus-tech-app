@@ -25,6 +25,7 @@ enum TipoNotificacao {
 
   /// Demandante cancelou uma demanda que estava com um professor (UC16).
   demandaCancelada,
+  demandaRecomendada,
 
   /// Nova mensagem no chat. Só é gerada quando o destinatário ainda não tinha
   /// mensagens não lidas naquele chat — ver `ChatRepository.enviarMensagem`.
@@ -55,6 +56,7 @@ enum TipoNotificacao {
       .firstWhere((t) => t.name == valor, orElse: () => generica);
 
   IconData get icone => switch (this) {
+        TipoNotificacao.demandaRecomendada => Icons.recommend_outlined,
         TipoNotificacao.demandaEmAnalise => Icons.search,
         TipoNotificacao.demandaEmProducao => Icons.engineering_outlined,
         TipoNotificacao.demandaDevolvida => Icons.undo,
@@ -71,6 +73,7 @@ enum TipoNotificacao {
       };
 
   Color get cor => switch (this) {
+        TipoNotificacao.demandaRecomendada => AppColors.primary,
         TipoNotificacao.demandaEmAnalise => Colors.orange.shade700,
         TipoNotificacao.demandaEmProducao => Colors.blue.shade700,
         TipoNotificacao.demandaDevolvida => Colors.amber.shade800,
@@ -117,11 +120,11 @@ class Notificacao {
   final String id;
 
   /// Quem recebe. É o campo que a Rule usa para autorizar a leitura.
-  final String destinatarioUid;
+  final String destinatarioId;
 
-  /// Quem causou o evento. `autorUid == request.auth.uid` na criação é o que a
+  /// Quem causou o evento. `autorId == request.auth.uid` na criação é o que a
   /// Rule exige para impedir que alguém forje notificações em nome de terceiros.
-  final String autorUid;
+  final String autorId;
   final String autorNome;
 
   final TipoNotificacao tipo;
@@ -144,8 +147,8 @@ class Notificacao {
 
   const Notificacao({
     required this.id,
-    required this.destinatarioUid,
-    required this.autorUid,
+    required this.destinatarioId,
+    required this.autorId,
     required this.autorNome,
     required this.tipo,
     required this.titulo,
@@ -160,8 +163,8 @@ class Notificacao {
   });
 
   Map<String, dynamic> toMap() => {
-        'destinatarioUid': destinatarioUid,
-        'autorUid': autorUid,
+        'destinatarioUid': destinatarioId,
+        'autorUid': autorId,
         'autorNome': autorNome,
         'tipo': tipo.name,
         'titulo': titulo,
@@ -178,8 +181,8 @@ class Notificacao {
   factory Notificacao.fromMap(String id, Map<String, dynamic> map) =>
       Notificacao(
         id: id,
-        destinatarioUid: map['destinatarioUid'] as String,
-        autorUid: map['autorUid'] as String? ?? '',
+        destinatarioId: map['destinatarioUid'] as String,
+        autorId: map['autorUid'] as String? ?? '',
         autorNome: map['autorNome'] as String? ?? 'Nexus Tech',
         tipo: TipoNotificacao.from(map['tipo'] as String?),
         titulo: map['titulo'] as String? ?? 'Nexus Tech',
@@ -190,8 +193,7 @@ class Notificacao {
         lida: map['lida'] as bool? ?? false,
         lidaEm: DateTime.tryParse(map['lidaEm'] as String? ?? ''),
         enviada: map['enviada'] as bool? ?? false,
-        criadoEm:
-            DateTime.tryParse(map['criadoEm'] as String? ?? '') ??
-                DateTime.now(),
+        criadoEm: DateTime.tryParse(map['criadoEm'] as String? ?? '') ??
+            DateTime.now(),
       );
 }

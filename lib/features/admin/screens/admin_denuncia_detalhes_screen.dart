@@ -32,8 +32,9 @@ class AdminDenunciaDetalhesScreen extends StatefulWidget {
 
 class _AdminDenunciaDetalhesScreenState
     extends State<AdminDenunciaDetalhesScreen> {
-  final _demandaRepository = DemandaRepository();
-  final _denunciaRepository = DenunciaRepository();
+  DemandaRepository get _demandaRepository => context.read<DemandaRepository>();
+  DenunciaRepository get _denunciaRepository =>
+      context.read<DenunciaRepository>();
 
   /// A denúncia recebida por parâmetro é um retrato do momento em que a lista
   /// foi lida. Depois de julgar aqui, guardamos a versão atualizada para a
@@ -71,7 +72,7 @@ class _AdminDenunciaDetalhesScreenState
     final resultado = await provider.julgar(
       denuncia: _denuncia,
       procedente: procedente,
-      adminUid: admin.uid,
+      adminId: admin.id,
       adminNome: admin.nome,
       parecer: parecer,
     );
@@ -89,9 +90,9 @@ class _AdminDenunciaDetalhesScreenState
         id: _denuncia.id,
         demandaId: _denuncia.demandaId,
         tituloDemanda: _denuncia.tituloDemanda,
-        demandanteUid: _denuncia.demandanteUid,
+        demandanteId: _denuncia.demandanteId,
         demandanteNome: _denuncia.demandanteNome,
-        professorUid: _denuncia.professorUid,
+        professorId: _denuncia.professorId,
         professorNome: _denuncia.professorNome,
         motivo: _denuncia.motivo,
         descricao: _denuncia.descricao,
@@ -100,7 +101,7 @@ class _AdminDenunciaDetalhesScreenState
             : StatusDenuncia.improcedente,
         criadoEm: _denuncia.criadoEm,
         analisadaEm: DateTime.now(),
-        analisadaPorUid: admin.uid,
+        analisadaPorId: admin.id,
         analisadaPorNome: admin.nome,
         parecerAdmin: parecer,
         strikeAplicado: resultado.strikeAplicado,
@@ -126,7 +127,8 @@ class _AdminDenunciaDetalhesScreenState
 
   @override
   Widget build(BuildContext context) {
-    final processando = context.watch<AdminProvider>().processando(_denuncia.id);
+    final processando =
+        context.watch<AdminProvider>().processando(_denuncia.id);
 
     return Scaffold(
       body: SafeArea(
@@ -209,7 +211,7 @@ class _AdminDenunciaDetalhesScreenState
   /// "primeiro deslize" de "reincidência".
   Widget _historicoDoDemandante() {
     return StreamBuilder<List<Denuncia>>(
-      stream: _denunciaRepository.observarDoDemandante(_denuncia.demandanteUid),
+      stream: _denunciaRepository.observarDoDemandante(_denuncia.demandanteId),
       builder: (context, snap) {
         final todas = snap.data ?? const <Denuncia>[];
         final procedentes =
@@ -403,8 +405,7 @@ class _AdminDenunciaDetalhesScreenState
     );
   }
 
-  String _dataHora(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')}/'
+  String _dataHora(DateTime d) => '${d.day.toString().padLeft(2, '0')}/'
       '${d.month.toString().padLeft(2, '0')}/${d.year} às '
       '${d.hour.toString().padLeft(2, '0')}:'
       '${d.minute.toString().padLeft(2, '0')}';

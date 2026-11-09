@@ -141,7 +141,7 @@ class Demanda {
   final String id;
 
   // --- demandante ---
-  final String demandanteUid;
+  final String demandanteId;
   final String demandanteNome;
   final TipoDemandante demandanteTipo;
 
@@ -156,7 +156,7 @@ class Demanda {
   final String? motivoCancelamento;
 
   // --- atribuição (preenchido pelo professor no ciclo de vida — Sprint 3) ---
-  final String? professorUid;
+  final String? professorId;
   final String? professorNome;
 
   /// Momento em que o professor marcou a demanda para análise (UC09).
@@ -195,7 +195,7 @@ class Demanda {
 
   const Demanda({
     required this.id,
-    required this.demandanteUid,
+    required this.demandanteId,
     required this.demandanteNome,
     required this.demandanteTipo,
     required this.titulo,
@@ -205,7 +205,7 @@ class Demanda {
     required this.status,
     required this.criadoEm,
     this.motivoCancelamento,
-    this.professorUid,
+    this.professorId,
     this.professorNome,
     this.analiseIniciadaEm,
     this.analiseExpiraEm,
@@ -225,7 +225,7 @@ class Demanda {
       analiseExpiraEm!.isBefore(DateTime.now());
 
   Map<String, dynamic> toMap() => {
-        'demandanteUid': demandanteUid,
+        'demandanteUid': demandanteId,
         'demandanteNome': demandanteNome,
         'demandanteTipo': demandanteTipo.name,
         'titulo': titulo,
@@ -235,7 +235,7 @@ class Demanda {
         'impacto': impacto,
         'status': status.name,
         'motivoCancelamento': motivoCancelamento,
-        'professorUid': professorUid,
+        'professorUid': professorId,
         'professorNome': professorNome,
         'analiseIniciadaEm': analiseIniciadaEm?.toIso8601String(),
         'analiseExpiraEm': analiseExpiraEm?.toIso8601String(),
@@ -250,7 +250,7 @@ class Demanda {
 
   factory Demanda.fromMap(String id, Map<String, dynamic> map) => Demanda(
         id: id,
-        demandanteUid: map['demandanteUid'] as String,
+        demandanteId: map['demandanteUid'] as String,
         demandanteNome: map['demandanteNome'] as String,
         demandanteTipo: TipoDemandante.values.firstWhere(
           (t) => t.name == map['demandanteTipo'],
@@ -265,7 +265,7 @@ class Demanda {
           orElse: () => StatusDemanda.cadastrada,
         ),
         motivoCancelamento: map['motivoCancelamento'] as String?,
-        professorUid: map['professorUid'] as String?,
+        professorId: map['professorUid'] as String?,
         professorNome: map['professorNome'] as String?,
         analiseIniciadaEm: _parseData(map['analiseIniciadaEm']),
         analiseExpiraEm: _parseData(map['analiseExpiraEm']),
@@ -293,7 +293,7 @@ class Demanda {
     String? impacto,
     StatusDemanda? status,
     String? motivoCancelamento,
-    String? professorUid,
+    String? professorId,
     String? professorNome,
     DateTime? analiseIniciadaEm,
     DateTime? analiseExpiraEm,
@@ -306,7 +306,7 @@ class Demanda {
   }) {
     return Demanda(
       id: id,
-      demandanteUid: demandanteUid,
+      demandanteId: demandanteId,
       demandanteNome: demandanteNome,
       demandanteTipo: demandanteTipo,
       titulo: titulo ?? this.titulo,
@@ -315,7 +315,7 @@ class Demanda {
       impacto: impacto ?? this.impacto,
       status: status ?? this.status,
       motivoCancelamento: motivoCancelamento ?? this.motivoCancelamento,
-      professorUid: professorUid ?? this.professorUid,
+      professorId: professorId ?? this.professorId,
       professorNome: professorNome ?? this.professorNome,
       analiseIniciadaEm: analiseIniciadaEm ?? this.analiseIniciadaEm,
       analiseExpiraEm: analiseExpiraEm ?? this.analiseExpiraEm,
