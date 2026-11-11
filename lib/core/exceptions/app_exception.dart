@@ -60,4 +60,13 @@ class AuthException extends AppException {
 /// estado da conta a suspende — a mensagem precisa explicar isso.
 class ContaBloqueadaException extends AppException {
   const ContaBloqueadaException(super.message);
+
+  factory ContaBloqueadaException.fromReason(String? reason) =>
+      ContaBloqueadaException(switch (reason) {
+        'strike_limit' =>
+          'Sua conta atingiu o limite de três advertências e foi suspensa. Contate a administração.',
+        'professor_inactive' =>
+          'Seu perfil de professor foi desativado. Contate a administração.',
+        _ => 'Esta conta está bloqueada. Contate a administração.',
+      });
 }

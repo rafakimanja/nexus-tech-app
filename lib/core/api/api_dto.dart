@@ -40,12 +40,12 @@ Demandante apiApplicant(Map<String, dynamic> m) => Demandante(
     nome: m['name'] as String,
     criadoEm: DateTime.parse(m['created_at'] as String),
     fotoUrl: m['photo_url'] as String?,
-    telefone: m['phone'] as String,
-    tipo: TipoDemandante.values.byName(m['type'] as String),
-    cpfCnpj: m['cpf_cnpj'] as String,
-    endereco: m['address'] as String,
-    strikes: m['strikes'] as int,
-    banido: m['blocked'] as bool);
+    telefone: m['phone'] as String? ?? '',
+    tipo: TipoDemandante.fromApi(m['type'] as String?),
+    cpfCnpj: m['cpf_cnpj'] as String? ?? '',
+    endereco: m['address'] as String? ?? '',
+    strikes: (m['strikes'] as num?)?.toInt() ?? 0,
+    banido: m['blocked'] as bool? ?? ((m['strikes'] as num?) ?? 0) >= 3);
 
 Professor apiTeacher(Map<String, dynamic> m) {
   final areas = apiList(m['areas']);
@@ -76,9 +76,9 @@ Area apiArea(Map<String, dynamic> m) => Area(
 Demanda apiDemand(Map<String, dynamic> m) {
   // Validar enums antes do mapper legado, que aceita defaults do Firestore.
   StatusDemanda.values.byName(m['status'] as String);
-  TipoDemandante.values.byName(m['demandanteTipo'] as String);
   return Demanda.fromMap(apiId(m['id']), {
     ...m,
+    'demandanteTipo': TipoDemandante.fromApi(m['demandanteTipo'] as String?).name,
     'demandanteUid': apiId(m['demandanteId']),
     'professorUid': m['professorId'] == null ? null : apiId(m['professorId']),
   });

@@ -16,6 +16,10 @@ import 'package:nexus_tech/core/repositories/api/usuario_repository.dart';
 import 'package:nexus_tech/core/services/api_auth_service.dart';
 import 'package:nexus_tech/features/auth/screens/login_screen.dart';
 import 'package:nexus_tech/features/demandas/screens/professor_home_screen.dart';
+import 'package:nexus_tech/features/admin/screens/api_denuncia_detalhes_screen.dart';
+import 'package:nexus_tech/features/auth/screens/conta_bloqueada_screen.dart';
+import '../core/repositories/api_backend_test.dart' as fixtures;
+import '../core/repositories/report_judgment_test.dart' as reports;
 
 void main() {
   testWidgets(
@@ -27,6 +31,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     final requests = <String>[];
     var status = 'cadastrada';
+    var blocked = false;
     final user = {
       'id': 2,
       'name': 'Professora API',
@@ -38,9 +43,33 @@ void main() {
     };
     final api = ApiClient('https://example.test', client: MockClient((r) async {
       requests.add('${r.method} ${r.url.path}');
+      if (blocked && r.url.path != '/me') {
+        return fixtures.json({
+          'error': {'message': 'account blocked'}
+        }, 403);
+      }
       dynamic data;
       switch (r.url.path) {
         case '/notifications':
+          return fixtures.json([
+            {
+              'id': 12,
+              'user_id': 2,
+              'type': 'denunciaJulgada',
+              'title': 'Sua denúncia foi julgada',
+              'body': 'Consulte o parecer.',
+              'resource_type': 'report',
+              'resource_id': 7,
+              'created_at': '2026-11-11T12:00:00Z',
+              'read_at': null,
+            }
+          ]);
+        case '/notifications/12/read':
+          return http.Response('', 204);
+        case '/reports/7':
+          return fixtures.json(reports.report(status: 'improcedente'));
+        case '/demands/42':
+          return fixtures.json(fixtures.demand());
         case '/reports':
           return http.Response('[]', 200);
         case '/login/v2':
@@ -52,7 +81,13 @@ void main() {
             'user': user
           };
         case '/me':
-          data = {'user': user};
+          data = {
+            'user': {
+              ...user,
+              'blocked': blocked,
+              if (blocked) 'block_reason': 'strike_limit'
+            }
+          };
         case '/teachers/2':
           data = {
             ...user,
@@ -124,13 +159,24 @@ void main() {
     await tester.tap(find.text('Minhas Demandas').last);
     await tester.pumpAndSettle();
     expect(find.text('Demanda recebida da API'), findsOneWidget);
+    expect(find.byTooltip('Notificações'), findsOneWidget);
+    await tester.tap(find.byTooltip('Notificações'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sua denúncia foi julgada'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ApiDenunciaDetalhesScreen), findsOneWidget);
+    expect(find.text('Parecer registrado'), findsOneWidget);
+    expect(find.text('Julgar procedente'), findsNothing);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Conversas').last);
     await tester.pumpAndSettle();
     expect(find.text('Conversas ainda não está disponível nesta versão.'),
         findsOneWidget);
     expect(requests.any((r) => r.contains('chat')), false);
     expect(requests.any((r) => r.contains('/notifications')), true);
-    expect(find.byTooltip('Notificações'), findsOneWidget);
     await auth.signOut();
     await tester.pumpAndSettle();
     expect(find.byType(LoginScreen), findsOneWidget);
@@ -138,6 +184,12 @@ void main() {
     await tester.tap(find.text('Entrar com Google'));
     await tester.pumpAndSettle();
     expect(find.byType(ProfessorHomeScreen), findsOneWidget);
+    blocked = true;
+    api.refresh();
+    await tester.pumpAndSettle();
+    expect(find.byType(ContaBloqueadaScreen), findsOneWidget);
+    expect(find.byType(ProfessorHomeScreen), findsNothing);
+    expect(find.textContaining('limite de três advertências'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();

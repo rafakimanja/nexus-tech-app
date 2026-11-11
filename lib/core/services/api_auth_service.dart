@@ -29,6 +29,7 @@ class ApiAuthService implements AuthService {
         _googleSignOut = googleSignOut,
         _google = google {
     client.onUnauthorized = _expire;
+    client.onAccountBlocked = _checkBlocked;
   }
 
   factory ApiAuthService.google(ApiClient client, {String clientId = ''}) {
@@ -120,6 +121,25 @@ class ApiAuthService implements AuthService {
     if (!_disposed) _changes.add(null);
   }
 
+  bool _checkingBlocked = false;
+  void _checkBlocked() async {
+    if (_checkingBlocked || _disposed || _user == null) return;
+    _checkingBlocked = true;
+    final attempt = _attempt;
+    try {
+      final me =
+          (await client.request('GET', '/me'))['user'] as Map<String, dynamic>;
+      if (!_disposed && attempt == _attempt && me['blocked'] == true) {
+        _changes.addError(
+            ContaBloqueadaException.fromReason(me['block_reason'] as String?));
+      }
+    } catch (_) {
+      // A observação periódica de /me continua tentando confirmar a sessão.
+    } finally {
+      _checkingBlocked = false;
+    }
+  }
+
   void _expire() {
     _clear();
     unawaited(push?.stop(expired: true).catchError((Object _) {}));
@@ -139,6 +159,7 @@ class ApiAuthService implements AuthService {
     _webSubscription?.cancel();
     _clear();
     client.onUnauthorized = null;
+    client.onAccountBlocked = null;
     _changes.close();
   }
 }

@@ -1,34 +1,23 @@
 import '../core/repositories/admin_repository.dart';
 import '../core/repositories/firebase/admin_repository.dart';
-import '../core/repositories/memory/admin_repository.dart';
 import '../core/repositories/anexo_repository.dart';
 import '../core/repositories/firebase/anexo_repository.dart';
-import '../core/repositories/memory/anexo_repository.dart';
 import '../core/repositories/area_repository.dart';
 import '../core/repositories/firebase/area_repository.dart';
-import '../core/repositories/memory/area_repository.dart';
 import '../core/repositories/chat_repository.dart';
 import '../core/repositories/firebase/chat_repository.dart';
-import '../core/repositories/memory/chat_repository.dart';
 import '../core/repositories/demanda_repository.dart';
 import '../core/repositories/firebase/demanda_repository.dart';
-import '../core/repositories/memory/demanda_repository.dart';
 import '../core/repositories/denuncia_repository.dart';
 import '../core/repositories/firebase/denuncia_repository.dart';
-import '../core/repositories/memory/denuncia_repository.dart';
 import '../core/repositories/foto_perfil_repository.dart';
 import '../core/repositories/firebase/foto_perfil_repository.dart';
-import '../core/repositories/memory/foto_perfil_repository.dart';
 import '../core/repositories/notificacao_repository.dart';
 import '../core/repositories/firebase/notificacao_repository.dart';
-import '../core/repositories/memory/notificacao_repository.dart';
 import '../core/repositories/usuario_repository.dart';
 import '../core/repositories/firebase/usuario_repository.dart';
-import '../core/repositories/memory/usuario_repository.dart';
-import '../core/repositories/memory/memory_store.dart';
 import '../core/services/auth_service.dart';
 import '../core/services/firebase_auth_service.dart';
-import '../core/services/memory_auth_service.dart';
 import '../core/api/api_client.dart';
 import '../core/services/api_auth_service.dart';
 import '../core/services/api_push_service.dart';
@@ -53,8 +42,6 @@ class AppDependencies {
   final FotoPerfilRepository fotoPerfil;
   final NotificacaoRepository notificacao;
   final UsuarioRepository usuario;
-  final MemoryStore? demoStore;
-  final Future<void> Function(String)? entrarDemonstracao;
   final bool usaApi;
   final void Function()? _disposeApi;
 
@@ -70,8 +57,6 @@ class AppDependencies {
     required this.fotoPerfil,
     required this.notificacao,
     required this.usuario,
-    this.demoStore,
-    this.entrarDemonstracao,
     this.usaApi = false,
     void Function()? disposeApi,
   }) : _disposeApi = disposeApi;
@@ -126,27 +111,7 @@ class AppDependencies {
         fotoPerfil: FirebaseFotoPerfilRepository());
   }
 
-  factory AppDependencies.memory({MemoryStore? store}) {
-    final dados = store ?? MemoryStore();
-    final auth = MemoryAuthService(dados);
-    return AppDependencies(
-      auth: auth,
-      demoStore: dados,
-      entrarDemonstracao: auth.entrarComo,
-      admin: MemoryAdminRepository(dados),
-      anexo: MemoryAnexoRepository(dados),
-      area: MemoryAreaRepository(dados),
-      chat: MemoryChatRepository(dados),
-      demanda: MemoryDemandaRepository(dados),
-      denuncia: MemoryDenunciaRepository(dados),
-      fotoPerfil: MemoryFotoPerfilRepository(dados),
-      notificacao: MemoryNotificacaoRepository(dados),
-      usuario: MemoryUsuarioRepository(dados),
-    );
-  }
-
   void dispose() {
     _disposeApi?.call();
-    demoStore?.dispose();
   }
 }

@@ -17,13 +17,6 @@
       "toolArgs": ["--dart-define=APP_BACKEND=api", "--web-hostname=localhost", "--web-port=5173"]
     },
     {
-      "name": "Nexus Tech • Demonstração",
-      "request": "launch",
-      "type": "dart",
-      "program": "lib/main.dart",
-      "toolArgs": ["--dart-define=APP_BACKEND=memory"]
-    },
-    {
       "name": "Nexus Tech • Firebase",
       "request": "launch",
       "type": "dart",

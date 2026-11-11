@@ -109,12 +109,12 @@ class _AdminDenunciaDetalhesScreenState
     });
 
     _feedback(_mensagemResultado(resultado),
-        resultado.contaBanida ? AppColors.error : AppColors.success);
+        resultado.contaBanida == true ? AppColors.error : AppColors.success);
   }
 
   String _mensagemResultado(ResultadoJulgamento r) {
     if (!r.procedente) return 'Denúncia arquivada como improcedente.';
-    if (r.contaBanida) {
+    if (r.contaBanida == true) {
       return 'Advertência aplicada (${r.strikesTotais}/'
           '${AppConstants.strikesParaBanimento}). Conta suspensa.';
     }

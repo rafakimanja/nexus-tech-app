@@ -32,9 +32,8 @@ class ContaBloqueadaScreen extends StatelessWidget {
           mensagem: d.motivoBanimento ??
               'Sua conta acumulou ${AppConstants.strikesParaBanimento} '
                   'advertências por denúncias procedentes e foi suspensa.',
-          detalhe: d.banidoEm == null
-              ? null
-              : 'Suspensa em ${_data(d.banidoEm!)}.',
+          detalhe:
+              d.banidoEm == null ? null : 'Suspensa em ${_data(d.banidoEm!)}.',
         ),
       final Professor p when !p.ativo => _Conteudo(
           icone: Icons.person_off_outlined,
@@ -46,11 +45,12 @@ class ContaBloqueadaScreen extends StatelessWidget {
               ? null
               : 'Desativado em ${_data(p.desativadoEm!)}.',
         ),
-      _ => const _Conteudo(
+      _ => _Conteudo(
           icone: Icons.lock_outline,
           titulo: 'Acesso indisponível',
-          mensagem: 'Sua conta não está habilitada para usar a plataforma no '
-              'momento.',
+          mensagem: auth.erro ??
+              'Sua conta não está habilitada para usar a plataforma no '
+                  'momento.',
           detalhe: null,
         ),
     };
@@ -71,8 +71,7 @@ class ContaBloqueadaScreen extends StatelessWidget {
                     color: AppColors.error.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(conteudo.icone,
-                      size: 48, color: AppColors.error),
+                  child: Icon(conteudo.icone, size: 48, color: AppColors.error),
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -99,8 +98,7 @@ class ContaBloqueadaScreen extends StatelessWidget {
                   Text(
                     conteudo.detalhe!,
                     textAlign: TextAlign.center,
-                    style:
-                        TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
                   ),
                 ],
                 const SizedBox(height: 28),
@@ -155,8 +153,7 @@ class ContaBloqueadaScreen extends StatelessWidget {
     );
   }
 
-  static String _data(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')}/'
+  static String _data(DateTime d) => '${d.day.toString().padLeft(2, '0')}/'
       '${d.month.toString().padLeft(2, '0')}/${d.year}';
 }
 

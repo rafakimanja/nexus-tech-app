@@ -106,6 +106,16 @@ class NotificacoesScreen extends StatelessWidget {
     if (!context.mounted) return;
     final role = auth.usuario?.role;
 
+    // A API autoriza o professor autor a consultar o parecer, mesmo quando
+    // a demanda foi cancelada. O demandante recebe um recurso "demand".
+    if (context.read<AppDependencies>().usaApi &&
+        n.denunciaId != null &&
+        (role == UserRole.administrador || role == UserRole.professor)) {
+      navigator.push(MaterialPageRoute<void>(
+          builder: (_) => ApiDenunciaDetalhesScreen(id: n.denunciaId!)));
+      return;
+    }
+
     switch (n.tipo.destino) {
       case DestinoNotificacao.chat:
         final chatId = n.chatId ?? n.demandaId;

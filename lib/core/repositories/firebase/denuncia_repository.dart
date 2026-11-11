@@ -313,7 +313,7 @@ class FirebaseDenunciaRepository implements DenunciaRepository {
     if (!resultado.strikeAplicado) return;
 
     // Aviso ao demandante advertido/banido.
-    if (resultado.contaBanida) {
+    if (resultado.contaBanida == true) {
       await _notificacoes.enfileirar(
         destinatarioId: denuncia.demandanteId,
         autorId: adminId,
@@ -328,7 +328,7 @@ class FirebaseDenunciaRepository implements DenunciaRepository {
       );
     } else {
       final restantes =
-          AppConstants.strikesParaBanimento - resultado.strikesTotais;
+          AppConstants.strikesParaBanimento - resultado.strikesTotais!;
       await _notificacoes.enfileirar(
         destinatarioId: denuncia.demandanteId,
         autorId: adminId,

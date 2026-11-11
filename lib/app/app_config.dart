@@ -1,4 +1,4 @@
-enum AppBackend { firebase, memory, api }
+enum AppBackend { firebase, api }
 
 class AppConfig {
   // Identificador público do cliente Web anunciado por /auth/google da API.
@@ -26,9 +26,8 @@ class AppConfig {
   factory AppConfig.parse(String value) => AppConfig(
           backend: switch (value) {
         'firebase' => AppBackend.firebase,
-        'memory' => AppBackend.memory,
         'api' => AppBackend.api,
         _ =>
-          throw ArgumentError('APP_BACKEND deve ser firebase, memory ou api.'),
+          throw ArgumentError('APP_BACKEND deve ser firebase ou api.'),
       });
 }

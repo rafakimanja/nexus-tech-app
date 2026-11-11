@@ -53,7 +53,8 @@ class App extends StatelessWidget {
       ],
       child: Consumer<AuthProvider>(
           builder: (context, auth, _) => MultiProvider(
-                key: ValueKey(auth.sessao?.id),
+                key: ValueKey(
+                    (auth.sessao?.id, auth.status == AuthStatus.bloqueado)),
                 providers: [
                   ChangeNotifierProvider(
                       create: (_) => CadastroProvider(
@@ -98,25 +99,6 @@ class App extends StatelessWidget {
                   theme: AppTheme.light,
                   debugShowCheckedModeBanner: false,
                   home: const PushNavigation(child: AppRouter()),
-                  builder: (context, child) => dependencies.demoStore == null
-                      ? child!
-                      : Column(
-                          children: [
-                            Material(
-                                color: Colors.amber.shade100,
-                                child: const SafeArea(
-                                    bottom: false,
-                                    child: SizedBox(
-                                        width: double.infinity,
-                                        child: Padding(
-                                            padding: EdgeInsets.all(6),
-                                            child: Text(
-                                                'Demonstração • dados temporários',
-                                                textAlign:
-                                                    TextAlign.center))))),
-                            Expanded(child: child!),
-                          ],
-                        ),
                 ),
               )),
     );

@@ -32,6 +32,7 @@ class _AppRouterState extends State<AppRouter> {
     return switch (auth.status) {
       AuthStatus.initial || AuthStatus.autenticando => const _LoadingScreen(),
       AuthStatus.naoAutenticado || AuthStatus.erro => const LoginScreen(),
+      AuthStatus.bloqueado => const ContaBloqueadaScreen(),
       AuthStatus.autenticadoSemCadastro => auth.isProfessor
           ? const CadastroProfessorScreen()
           : const CadastroDemandanteScreen(),

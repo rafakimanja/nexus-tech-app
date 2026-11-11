@@ -25,14 +25,13 @@ class AdminDenunciasScreen extends StatelessWidget {
       children: [
         AdminHeader(
           titulo: 'Denúncias',
-          subtitulo: admin.denunciasPendentes == 0
-              ? 'Nenhuma denúncia aguardando análise'
-              : '${admin.denunciasPendentes} aguardando análise',
+          subtitulo: !admin.suportaJulgamento
+              ? 'Consulta de denúncias registradas'
+              : admin.denunciasPendentes == 0
+                  ? 'Nenhuma denúncia aguardando análise'
+                  : '${admin.denunciasPendentes} aguardando análise',
         ),
-        if (admin.suportaModeracao) _filtro(context, admin),
-        if (!admin.suportaModeracao)
-          const AvisoAdmin(
-              'Denúncias registradas. Julgamento ainda não disponível.'),
+        if (admin.suportaJulgamento) _filtro(context, admin),
         Expanded(child: _lista(context, admin)),
       ],
     );

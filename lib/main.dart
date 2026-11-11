@@ -20,7 +20,6 @@ void main() async {
   }
   final dependencies = switch (config.backend) {
     AppBackend.firebase => AppDependencies.firebase(),
-    AppBackend.memory => AppDependencies.memory(),
     AppBackend.api => AppDependencies.api(
         baseUrl: config.apiBaseUrl,
         googleClientId: config.googleClientId,

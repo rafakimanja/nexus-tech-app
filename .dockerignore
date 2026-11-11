@@ -1,0 +1,10 @@
+.git
+.dart_tool
+.pub
+.pub-cache
+build
+coverage
+.idea
+.vscode
+.tools
+*.log

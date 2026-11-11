@@ -58,7 +58,7 @@ class _ApiAdminScreenState extends State<ApiAdminScreen> {
             const Padding(
                 padding: EdgeInsets.all(16),
                 child: Text(
-                    'Consulta de dados e denúncias. Julgamento e advertências ainda não estão disponíveis.')),
+                    'Consulte demandas, professores, demandantes e denúncias.')),
             Expanded(
                 child: TabBarView(children: [
               _list<Demanda>(

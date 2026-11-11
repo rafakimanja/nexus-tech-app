@@ -42,8 +42,10 @@ class FakeMessaging implements PushMessaging {
 void main() {
   test('consulta detalhes de denúncia pelo ID numérico', () async {
     final api = f.client((r) {
-      expect(r.url.path, '/reports/7');
       expect(r.headers['Authorization'], 'Bearer jwt');
+      if (r.url.path == '/demands/42') return f.json(f.demand());
+      if (r.url.path == '/teachers/2') return f.json(f.teacher());
+      expect(r.url.path, '/reports/7');
       return f.json({
         'id': 7,
         'demandaId': 42,
@@ -59,6 +61,40 @@ void main() {
     expect(report.demandaId, '42');
     expect(report.professorId, '2');
     expect(report.motivo, MotivoDenuncia.spam);
+    expect(report.tituloDemanda, 'Agenda comunitária');
+    expect(report.professorNome, 'Professora');
+    expect(report.demandanteNome, 'Associação');
+    expect(report.demandanteId, '1');
+  });
+
+  test('lista de denúncias reutiliza consulta de nomes e tolera remoções', () async {
+    final leituras = <String, int>{};
+    final api = f.client((r) {
+      leituras.update(r.url.path, (n) => n + 1, ifAbsent: () => 1);
+      if (r.url.path == '/demands/42') return f.json(f.demand());
+      if (r.url.path == '/teachers/2') return f.json(f.teacher());
+      if (r.url.path == '/teachers/3') return f.json({}, 404);
+      expect(r.url.path, '/reports');
+      return f.json([
+        for (final id in [3, 2, 1])
+          {
+            'id': id,
+            'demandaId': 42,
+            'professorId': id == 3 ? 3 : 2,
+            'motivo': 'spam',
+            'descricao': 'Propaganda indevida',
+            'status': 'pendente',
+            'criadoEm': '2026-11-09T12:00:00Z',
+          },
+      ]);
+    })..setToken('jwt');
+    final reports = await ApiDenunciaRepository(api).observarTodas().first;
+    expect(reports, hasLength(3));
+    expect(reports.first.professorNome, 'Professor indisponível');
+    expect(reports.last.professorNome, 'Professora');
+    expect(reports.every((r) => r.tituloDemanda == 'Agenda comunitária'), isTrue);
+    expect(leituras['/demands/42'], 1);
+    expect(leituras['/teachers/2'], 1);
   });
 
   test('renovação registra o token novo; expiração o invalida', () async {

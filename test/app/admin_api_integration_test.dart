@@ -51,10 +51,26 @@ void main() {
         }
         expect(r.headers['Authorization'], 'Bearer jwt');
         expect(r.method, 'GET');
-        if (r.url.path == '/notifications' || r.url.path == '/reports') {
+        if (r.url.path == '/notifications') {
           return fixtures.json([]);
         }
+        if (r.url.path == '/reports' || r.url.path == '/reports/7') {
+          final report = {
+            'id': 7,
+            'demandaId': 42,
+            'professorId': 2,
+            'motivo': 'spam',
+            'descricao': 'Propaganda indevida',
+            'status': 'pendente',
+            'criadoEm': '2026-11-09T12:00:00Z',
+          };
+          return fixtures.json(r.url.path == '/reports' ? [report] : report);
+        }
         switch (r.url.path) {
+          case '/demands/42':
+            return fixtures.json(fixtures.demand());
+          case '/teachers/2':
+            return fixtures.json(fixtures.teacher());
           case '/me':
             return fixtures.json({'user': user});
           case '/teachers/':
@@ -69,11 +85,10 @@ void main() {
                 'email': 'ong@example.test',
                 'created_at': '2026-11-04T12:00:00Z',
                 'phone': '11999999999',
-                'type': 'ong',
+                'type': failInitially ? 'tipoLegado' : 'ONG',
                 'cpf_cnpj': '12345678000100',
                 'address': 'Rua Um',
                 'strikes': 1,
-                'blocked': false,
               }
             ]);
           case '/demands/':
@@ -148,10 +163,16 @@ void main() {
           find.descendant(of: total, matching: find.text('3')), findsOneWidget);
       await tester.tap(find.text('Denúncias').last);
       await tester.pumpAndSettle();
-      expect(
-          find.text('Denúncias registradas. Julgamento ainda não disponível.'),
-          findsOneWidget);
-      expect(find.text('Nada pendente'), findsOneWidget);
+      expect(find.text('1 aguardando análise'), findsOneWidget);
+      expect(find.text('Agenda comunitária'), findsOneWidget);
+      expect(find.text('Por Professora · contra Associação'), findsOneWidget);
+      await tester.tap(find.text('Agenda comunitária'));
+      await tester.pumpAndSettle();
+      expect(find.text('Agenda comunitária'), findsOneWidget);
+      expect(find.text('Professor: Professora'), findsOneWidget);
+      expect(find.text('Demandante: Associação'), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Professores').last);
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'inexistente');
@@ -191,6 +212,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Demandantes').last);
       await tester.pumpAndSettle();
+      expect(find.text('Não foi possível carregar a lista de demandantes.'),
+          findsNothing);
+      expect(
+          find.text(failInitially ? 'Não informado' : 'ONG'), findsOneWidget);
       await tester.tap(find.text('Associação API'));
       await tester.pumpAndSettle();
       expect(find.byType(AdminDemandanteDetalhesScreen), findsOneWidget);

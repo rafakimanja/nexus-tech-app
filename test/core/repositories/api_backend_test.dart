@@ -65,6 +65,34 @@ ApiClient client(FutureOr<http.Response> Function(http.Request) handler,
 }
 
 void main() {
+  test('demandantes antigos não interrompem a leitura por tipo ou campos opcionais', () {
+    final base = <String, dynamic>{
+      'id': 1,
+      'name': 'Associação',
+      'email': 'ong@example.test',
+      'created_at': '2026-11-04T12:00:00Z',
+      'strikes': 3,
+    };
+    for (final entry in {
+      'ONG': TipoDemandante.ong,
+      'Órgão Público': TipoDemandante.orgaoPublico,
+      'pessoa_fisica': TipoDemandante.pessoaFisica,
+      'instituicao-educacional': TipoDemandante.instituicaoEducacional,
+      'tipoLegado': TipoDemandante.naoInformado,
+      '': TipoDemandante.naoInformado,
+    }.entries) {
+      final d = apiApplicant({...base, 'type': entry.key});
+      expect(d.tipo, entry.value);
+      expect(d.nome, 'Associação');
+      expect(d.banido, isTrue);
+      expect(d.telefone, isEmpty);
+    }
+    expect(apiApplicant(base).tipo, TipoDemandante.naoInformado);
+    expect(TipoDemandante.cadastraveis, isNot(contains(TipoDemandante.naoInformado)));
+    expect(apiDemand({...demand(), 'demandanteTipo': 'tipoLegado'}).demandanteTipo,
+        TipoDemandante.naoInformado);
+  });
+
   test('bloqueio em /me não consulta endpoints negados nem abre cadastro',
       () async {
     final api = client((r) {
@@ -109,10 +137,10 @@ void main() {
           'https://example.test/photo.png');
     }
   });
-  test('API é padrão; memória e Firebase continuam selecionáveis', () {
+  test('API é padrão e Firebase continua selecionável', () {
     expect(AppConfig.fromEnvironment().backend, AppBackend.api);
-    expect(AppConfig.parse('memory').backend, AppBackend.memory);
     expect(AppConfig.parse('firebase').backend, AppBackend.firebase);
+    expect(() => AppConfig.parse('memory'), throwsArgumentError);
     expect(() => AppConfig.parse('invalid'), throwsArgumentError);
   });
   test('login troca ID token por JWT e respeita papel definido pelo servidor',

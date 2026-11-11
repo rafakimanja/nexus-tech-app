@@ -5,7 +5,6 @@
 # Nexus Tech
 
 > O app agora usa a API HTTP por padrão. Veja [como executar e configurar o login](docs/INTEGRACAO_API.md).
-> O modo de demonstração continua disponível com `--dart-define=APP_BACKEND=memory`.
 
 ### A ponte entre quem tem um problema e quem sabe resolver.
 

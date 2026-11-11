@@ -19,13 +19,16 @@ class AdminProvider extends ChangeNotifier {
   final AdminRepository _adminRepository;
   final DenunciaRepository _denunciaRepository;
   final bool suportaModeracao;
+  final bool suportaJulgamento;
 
   AdminProvider({
     required AdminRepository adminRepository,
     required DenunciaRepository denunciaRepository,
     this.suportaModeracao = true,
+    this.suportaJulgamento = true,
   })  : _adminRepository = adminRepository,
-        _denunciaRepository = denunciaRepository;
+        _denunciaRepository = denunciaRepository,
+        _apenasDenunciasPendentes = suportaJulgamento;
 
   StreamSubscription<List<Denuncia>>? _subDenuncias;
   StreamSubscription<List<Professor>>? _subProfessores;
@@ -48,7 +51,7 @@ class AdminProvider extends ChangeNotifier {
 
   String _buscaProfessores = '';
   String _buscaDemandantes = '';
-  bool _apenasDenunciasPendentes = true;
+  bool _apenasDenunciasPendentes;
 
   // ============== getters ==============
 
@@ -180,6 +183,7 @@ class AdminProvider extends ChangeNotifier {
     _demandantes = const [];
     _buscaProfessores = '';
     _buscaDemandantes = '';
+    _apenasDenunciasPendentes = suportaJulgamento;
     _erro = null;
     _erroDenuncias = null;
     _erroProfessores = null;

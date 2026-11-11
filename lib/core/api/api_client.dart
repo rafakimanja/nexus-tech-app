@@ -14,6 +14,7 @@ class ApiClient {
   int _session = 0;
   bool _closed = false;
   void Function()? onUnauthorized;
+  void Function()? onAccountBlocked;
 
   ApiClient(String url,
       {http.Client? client,
@@ -92,6 +93,7 @@ class ApiClient {
         throw const AuthException();
       case 403:
         if (message == 'account blocked') {
+          onAccountBlocked?.call();
           throw const ContaBloqueadaException(
               'Esta conta está bloqueada. Contate a administração.');
         }

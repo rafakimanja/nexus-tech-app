@@ -16,6 +16,7 @@ enum AuthStatus {
   naoAutenticado,
   autenticadoSemCadastro,
   autenticado,
+  bloqueado,
   erro
 }
 
@@ -84,7 +85,9 @@ class AuthProvider extends ChangeNotifier {
     _erro = erro is AppException
         ? erro.message
         : 'Falha ao carregar sua sessão. Tente novamente.';
-    _status = AuthStatus.erro;
+    _status = erro is ContaBloqueadaException
+        ? AuthStatus.bloqueado
+        : AuthStatus.erro;
     notifyListeners();
   }
 

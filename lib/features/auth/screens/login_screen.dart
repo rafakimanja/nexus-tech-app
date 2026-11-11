@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../../app/theme.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../app/app_dependencies.dart';
-import '../widgets/demo_login_options.dart';
 import '../widgets/api_google_button.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -34,8 +33,6 @@ class LoginScreen extends StatelessWidget {
               const Spacer(flex: 5),
               if (auth.status == AuthStatus.autenticando)
                 const CircularProgressIndicator()
-              else if (context.read<AppDependencies>().demoStore != null)
-                const DemoLoginOptions()
               else if (context.read<AppDependencies>().usaApi)
                 const ApiGoogleButton()
               else

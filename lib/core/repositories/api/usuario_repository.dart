@@ -21,8 +21,7 @@ class ApiUsuarioRepository implements UsuarioRepository {
     final role = apiRole(me['role']);
     // Só /me permanece acessível para uma conta bloqueada.
     if (me['blocked'] == true) {
-      throw const ContaBloqueadaException(
-          'Esta conta está bloqueada. Contate a administração.');
+      throw ContaBloqueadaException.fromReason(me['block_reason'] as String?);
     }
     if (me['profile_complete'] != true) return null;
     if (role == UserRole.administrador) {

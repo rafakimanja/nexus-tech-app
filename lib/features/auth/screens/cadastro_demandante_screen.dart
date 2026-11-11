@@ -124,7 +124,7 @@ class _CadastroDemandanteScreenState extends State<CadastroDemandanteScreen> {
                         Icon(Icons.business_center, color: AppColors.primary),
                     hintText: 'Selecione',
                   ),
-                  items: TipoDemandante.values
+                  items: TipoDemandante.cadastraveis
                       .map((t) =>
                           DropdownMenuItem(value: t, child: Text(t.label)))
                       .toList(),

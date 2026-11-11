@@ -36,6 +36,7 @@ enum TipoNotificacao {
 
   /// Denúncia analisada — retorno ao professor que denunciou.
   denunciaAnalisada,
+  denunciaJulgada,
 
   /// Strike aplicado ao demandante após denúncia procedente.
   strikeAplicado,
@@ -64,7 +65,9 @@ enum TipoNotificacao {
         TipoNotificacao.demandaCancelada => Icons.cancel_outlined,
         TipoNotificacao.novaMensagem => Icons.chat_bubble_outline,
         TipoNotificacao.denunciaRecebida => Icons.flag_outlined,
-        TipoNotificacao.denunciaAnalisada => Icons.gavel_outlined,
+        TipoNotificacao.denunciaAnalisada ||
+        TipoNotificacao.denunciaJulgada =>
+          Icons.gavel_outlined,
         TipoNotificacao.strikeAplicado => Icons.warning_amber_outlined,
         TipoNotificacao.contaBanida => Icons.block,
         TipoNotificacao.perfilDesativado => Icons.person_off_outlined,
@@ -81,7 +84,9 @@ enum TipoNotificacao {
         TipoNotificacao.demandaCancelada => AppColors.error,
         TipoNotificacao.novaMensagem => AppColors.primary,
         TipoNotificacao.denunciaRecebida => Colors.deepOrange.shade700,
-        TipoNotificacao.denunciaAnalisada => Colors.indigo.shade600,
+        TipoNotificacao.denunciaAnalisada ||
+        TipoNotificacao.denunciaJulgada =>
+          Colors.indigo.shade600,
         TipoNotificacao.strikeAplicado => Colors.deepOrange.shade800,
         TipoNotificacao.contaBanida => AppColors.error,
         TipoNotificacao.perfilDesativado => AppColors.error,
@@ -93,6 +98,7 @@ enum TipoNotificacao {
   DestinoNotificacao get destino => switch (this) {
         TipoNotificacao.novaMensagem => DestinoNotificacao.chat,
         TipoNotificacao.denunciaRecebida ||
+        TipoNotificacao.denunciaJulgada ||
         TipoNotificacao.denunciaAnalisada =>
           DestinoNotificacao.denuncia,
         TipoNotificacao.strikeAplicado ||

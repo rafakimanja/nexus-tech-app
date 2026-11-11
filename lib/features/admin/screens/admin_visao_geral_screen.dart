@@ -77,10 +77,7 @@ class _AdminVisaoGeralScreenState extends State<AdminVisaoGeralScreen> {
                       ],
                     ),
                   const SizedBox(height: 28),
-                  _secao('Moderação'),
-                  if (!admin.suportaModeracao)
-                    const AvisoAdmin(
-                        'Julgamento e ações de moderação ainda não estão disponíveis no servidor.'),
+                  _secao(admin.suportaModeracao ? 'Moderação' : 'Denúncias e contas'),
                   if (admin.erroDenuncias != null)
                     AvisoAdmin(admin.erroDenuncias!),
                   if (admin.erroDemandantes != null)

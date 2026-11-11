@@ -5,14 +5,17 @@ import '../models/denuncia.dart';
 class ResultadoJulgamento {
   final bool procedente;
   final bool strikeAplicado;
-  final int strikesTotais;
-  final bool contaBanida;
+  // A API retorna a penalidade desta decisão, mas não o total da conta.
+  final int? strikesTotais;
+  final bool? contaBanida;
+  final Denuncia? denunciaAtualizada;
 
   const ResultadoJulgamento({
     required this.procedente,
     required this.strikeAplicado,
-    required this.strikesTotais,
-    required this.contaBanida,
+    this.strikesTotais,
+    this.contaBanida,
+    this.denunciaAtualizada,
   });
 }
 

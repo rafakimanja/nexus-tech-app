@@ -1,5 +1,6 @@
 import 'package:nexus_tech/core/providers/auth_provider.dart';
-import 'package:nexus_tech/app/app_dependencies.dart';
+import 'package:nexus_tech/core/services/api_auth_service.dart';
+import 'package:nexus_tech/core/repositories/api/usuario_repository.dart';
 import 'package:nexus_tech/core/repositories/denuncia_repository.dart';
 import 'package:nexus_tech/core/repositories/api/denuncia_repository.dart';
 import 'package:nexus_tech/core/repositories/api/notificacao_repository.dart';
@@ -19,12 +20,13 @@ import '../core/repositories/api_backend_test.dart' as fixtures;
 
 void main() {
   testWidgets('admin pode alternar e revisitar todas as abas', (tester) async {
-    final demo = AppDependencies.memory();
-    addTearDown(demo.dispose);
     final api = ApiClient('https://example.test', client: MockClient((r) async {
       return http.Response(jsonEncode([]), 200);
     }))
       ..setToken('jwt');
+    final auth = ApiAuthService(api,
+        googleToken: () async => null, googleSignOut: () async {});
+    addTearDown(auth.dispose);
     await tester.pumpWidget(MultiProvider(
       providers: [
         Provider<AdminRepository>.value(value: ApiAdminRepository(api)),
@@ -34,7 +36,7 @@ void main() {
                 repository: ApiNotificacaoRepository(api))),
         ChangeNotifierProvider(
             create: (_) => AuthProvider(
-                authService: demo.auth, usuarioRepository: demo.usuario)),
+                authService: auth, usuarioRepository: ApiUsuarioRepository(api))),
       ],
       child: MaterialApp(theme: AppTheme.light, home: const ApiAdminScreen()),
     ));
@@ -61,8 +63,6 @@ void main() {
       (tester) async {
     var fail = true;
     var reads = 0;
-    final demo = AppDependencies.memory();
-    addTearDown(demo.dispose);
     final api = ApiClient('https://example.test',
         pollInterval: const Duration(seconds: 15),
         client: MockClient((r) async {
@@ -92,6 +92,9 @@ void main() {
       return fixtures.json([fixtures.demand()]);
     }))
       ..setToken('jwt');
+    final auth = ApiAuthService(api,
+        googleToken: () async => null, googleSignOut: () async {});
+    addTearDown(auth.dispose);
     await tester.pumpWidget(MultiProvider(
       providers: [
         Provider<AdminRepository>.value(value: ApiAdminRepository(api)),
@@ -101,7 +104,7 @@ void main() {
                 repository: ApiNotificacaoRepository(api))),
         ChangeNotifierProvider(
             create: (_) => AuthProvider(
-                authService: demo.auth, usuarioRepository: demo.usuario)),
+                authService: auth, usuarioRepository: ApiUsuarioRepository(api))),
       ],
       child: MaterialApp(theme: AppTheme.light, home: const ApiAdminScreen()),
     ));

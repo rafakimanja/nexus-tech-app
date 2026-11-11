@@ -29,7 +29,7 @@ class _EditarPerfilDemandanteScreenState
   late final TextEditingController _nome;
   late final TextEditingController _telefone;
   late final TextEditingController _endereco;
-  late TipoDemandante _tipo;
+  TipoDemandante? _tipo;
 
   @override
   void initState() {
@@ -38,7 +38,7 @@ class _EditarPerfilDemandanteScreenState
     _nome = TextEditingController(text: d.nome);
     _telefone = TextEditingController(text: _mascararTelefone(d.telefone));
     _endereco = TextEditingController(text: d.endereco);
-    _tipo = d.tipo;
+    _tipo = d.tipo == TipoDemandante.naoInformado ? null : d.tipo;
   }
 
   @override
@@ -59,7 +59,7 @@ class _EditarPerfilDemandanteScreenState
       id: widget.demandante.id,
       nome: _nome.text,
       telefone: _telefone.text,
-      tipo: _tipo,
+      tipo: _tipo!,
       endereco: _endereco.text,
     );
 
@@ -141,7 +141,7 @@ class _EditarPerfilDemandanteScreenState
                     prefixIcon:
                         Icon(Icons.business_center, color: AppColors.primary),
                   ),
-                  items: TipoDemandante.values
+                  items: TipoDemandante.cadastraveis
                       .map((t) =>
                           DropdownMenuItem(value: t, child: Text(t.label)))
                       .toList(),
