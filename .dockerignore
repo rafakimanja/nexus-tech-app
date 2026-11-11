@@ -7,4 +7,9 @@ coverage
 .idea
 .vscode
 .tools
+.codex
+.agents
+.aws
+.env
+.env.*
 *.log

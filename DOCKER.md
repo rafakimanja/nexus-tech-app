@@ -1,32 +1,24 @@
-# Hospedagem do Flutter Web com Docker
+# Executar no navegador com Docker
 
-Na VPS, instale o Docker e, na raiz do projeto, construa e inicie a imagem:
+Com o Docker instalado e em execução (usando contêineres Linux), execute na raiz do projeto:
 
 ```sh
 docker build -t nexus-tech-web .
-docker run -d --name nexus-tech-web --restart unless-stopped -p 8080:80 nexus-tech-web
+docker run --rm --name nexus-tech-web -p 8080:80 nexus-tech-web
 ```
 
-Acesse `http://IP_DA_VPS:8080`. O contêiner serve o aplicativo na raiz do domínio. Para usar HTTPS e um domínio, configure um proxy reverso com certificado TLS na VPS e encaminhe as requisições para a porta 8080.
+Abra http://localhost:8080. Para encerrar, pressione Ctrl+C.
 
-Por padrão, o build usa o backend `api` e a URL e o cliente Google definidos em `lib/app/app_config.dart`. Para substituí-los, forneça argumentos durante o build:
+O Dockerfile compila o Flutter Web em modo release e usa Nginx para servir os arquivos. Não é necessário instalar Flutter na máquina. A configuração existente em `nginx.conf` permite acessar rotas do aplicativo diretamente.
+
+Por padrão, o aplicativo usa o backend `api` e os valores de `lib/app/app_config.dart`. Para apontar para outra API:
 
 ```sh
-docker build -t nexus-tech-web \
-  --build-arg APP_BACKEND=api \
-  --build-arg API_BASE_URL=https://sua-api.example.com \
-  --build-arg GOOGLE_WEB_CLIENT_ID=seu-cliente-google \
-  .
+docker build -t nexus-tech-web --build-arg API_BASE_URL=https://sua-api.example.com .
 ```
 
-Esses valores são incorporados ao código público do aplicativo; não use segredos. Para alterá-los, gere uma nova imagem e recrie o contêiner. A API deve estar acessível pelo navegador e permitir a origem do frontend em sua configuração CORS. Configure também a origem autorizada no cliente Google, caso utilize login com Google.
+Também são aceitos `APP_BACKEND` e `GOOGLE_WEB_CLIENT_ID` como argumentos de build. Esses valores são incorporados ao aplicativo durante a compilação; para alterá-los, reconstrua a imagem e recrie o contêiner. Não coloque segredos nesses argumentos, pois o código web é público.
 
-Por padrão, é usada a tag `stable` do Flutter. O `flutter pub get` usa o `pubspec.lock` como ponto de partida, mas pode ajustar dependências dentro da imagem se a versão do SDK exigir. Para builds reproduzíveis, fixe uma versão compatível da imagem Flutter (preferencialmente por digest), por exemplo com `--build-arg FLUTTER_IMAGE=ghcr.io/cirruslabs/flutter:<versao>`, e mantenha o lockfile atualizado com esse mesmo SDK.
+A API precisa estar acessível pelo navegador e permitir a origem `http://localhost:8080` em sua configuração CORS. Se utilizar login com Google, configure essa origem no cliente OAuth. O contêiner serve apenas o frontend; a API deve estar em execução separadamente.
 
-Para atualizar após reconstruir a imagem:
-
-```sh
-docker stop nexus-tech-web
-docker rm nexus-tech-web
-docker run -d --name nexus-tech-web --restart unless-stopped -p 8080:80 nexus-tech-web
-```
+A imagem Flutter usa a tag `stable`. Para fixar o SDK, passe `--build-arg FLUTTER_IMAGE=ghcr.io/cirruslabs/flutter:<versao>`, escolhendo uma versão compatível com `pubspec.lock` (Dart >= 3.11 e Flutter >= 3.38). A tag móvel e o comando `flutter pub get` podem atualizar a resolução das dependências dentro da imagem.
