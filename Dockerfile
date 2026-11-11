@@ -4,7 +4,7 @@ FROM ${FLUTTER_IMAGE} AS build
 
 WORKDIR /app
 COPY pubspec.yaml pubspec.lock ./
-RUN flutter pub get --enforce-lockfile
+RUN flutter pub get
 
 COPY . .
 ARG APP_BACKEND=api

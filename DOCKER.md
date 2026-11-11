@@ -21,7 +21,7 @@ docker build -t nexus-tech-web \
 
 Esses valores são incorporados ao código público do aplicativo; não use segredos. Para alterá-los, gere uma nova imagem e recrie o contêiner. A API deve estar acessível pelo navegador e permitir a origem do frontend em sua configuração CORS. Configure também a origem autorizada no cliente Google, caso utilize login com Google.
 
-Para builds reproduzíveis, fixe uma versão compatível da imagem Flutter, por exemplo com `--build-arg FLUTTER_IMAGE=ghcr.io/cirruslabs/flutter:<versao>`. A versão precisa ser compatível com os SDKs exigidos por `pubspec.lock`. Por padrão, é usada a tag `stable`.
+Por padrão, é usada a tag `stable` do Flutter. O `flutter pub get` usa o `pubspec.lock` como ponto de partida, mas pode ajustar dependências dentro da imagem se a versão do SDK exigir. Para builds reproduzíveis, fixe uma versão compatível da imagem Flutter (preferencialmente por digest), por exemplo com `--build-arg FLUTTER_IMAGE=ghcr.io/cirruslabs/flutter:<versao>`, e mantenha o lockfile atualizado com esse mesmo SDK.
 
 Para atualizar após reconstruir a imagem:
 
